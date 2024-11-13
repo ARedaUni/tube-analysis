@@ -1,0 +1,15 @@
+# Python
+*.pyc
+__pycache__/
+
+# Virtual environment
+test_env/
+
+# Django secrets
+.env
+
+# Node modules
+node_modules/
+
+# Logs
+*.log

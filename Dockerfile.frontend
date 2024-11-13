@@ -1,0 +1,11 @@
+# Dockerfile for Next.js frontend
+FROM node:18-alpine
+
+WORKDIR /app
+
+# Copy frontend code and install dependencies
+COPY ./frontend /app
+RUN npm install
+
+# Start the development server
+CMD ["npm", "run", "dev"]
