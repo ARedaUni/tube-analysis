@@ -44,7 +44,8 @@ INSTALLED_APPS = [
      # Your custom apps
       # Third-party apps
     'rest_framework',
-    'sentiment',
+    'sentiment', 
+    'django_celery_beat',
 ]
 
 MIDDLEWARE = [
@@ -81,12 +82,12 @@ WSGI_APPLICATION = 'backend.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
-}
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.sqlite3',
+#         'NAME': BASE_DIR / 'db.sqlite3',
+#     }
+# }
 
 
 # Password validation
@@ -130,16 +131,34 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+# backend/settings.py
+
+# ...
+
+# Celery settings
+
 
 
 
 # Load environment variables
 load_dotenv()
 
+# Then define REDIS_URL
+REDIS_URL = os.getenv('REDIS_URL')
+
 # Database configuration
 DATABASES = {
     'default': dj_database_url.config(default=os.getenv('DATABASE_URL'))
 }
 
-# Redis configuration (for Day 2 tasks)
-REDIS_URL = os.getenv('REDIS_URL')
+# Celery settings
+CELERY_BROKER_URL = os.getenv('REDIS_URL', REDIS_URL)
+CELERY_RESULT_BACKEND = os.getenv('REDIS_URL', REDIS_URL)
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = 'UTC'
+CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
+
+
+

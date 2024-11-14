@@ -18,6 +18,8 @@ class Station(models.Model):
         return self.name
 
 class Tweet(models.Model):
+    tweet_id = models.CharField(max_length=50, unique=True)
+    username = models.CharField(max_length=100)
     text = models.TextField()
     line = models.ForeignKey(Line, on_delete=models.CASCADE, related_name='tweets', null=True, blank=True)
     station = models.ForeignKey(Station, on_delete=models.CASCADE, related_name='tweets', null=True, blank=True)
