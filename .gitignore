@@ -10,6 +10,7 @@ backend/venv/
 
 # Node modules
 node_modules/
+.env
 
 # Logs
 *.log
