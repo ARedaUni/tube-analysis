@@ -1,17 +1,27 @@
-# Dockerfile for Django backend
+# backend/Dockerfile
+
+# Use the official Python 3.10 slim image
 FROM python:3.10-slim
 
+# Set environment variables
+ENV PYTHONUNBUFFERED=1
+
+# Set the working directory inside the container
 WORKDIR /app
 
-# Install system dependencies for psycopg2-binary and other Python packages
-RUN apt-get update && apt-get install -y gcc libpq-dev
+# Copy the requirements file and install dependencies
+COPY requirements.txt /app/
 
-# Copy requirements.txt and install dependencies
-COPY ./backend/requirements.txt /app/requirements.txt
-RUN pip install --no-cache-dir -r /app/requirements.txt
+# Install system-level dependencies and Python packages
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    libpq-dev && \
+    pip install --no-cache-dir -r requirements.txt && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Copy the rest of the backend code
-COPY ./backend /app
+# Copy the rest of the application code
+COPY . /app/
 
-# Start the Gunicorn server
-CMD ["gunicorn", "backend.wsgi:application", "--bind", "0.0.0.0:8000"]
+# Run the Django development server by default
+CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
+

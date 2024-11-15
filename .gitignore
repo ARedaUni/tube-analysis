@@ -6,7 +6,7 @@ __pycache__/
 test_env/
 
 # Django secrets
-
+backend/venv/
 
 # Node modules
 node_modules/

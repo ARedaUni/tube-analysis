@@ -1,22 +1,75 @@
-version: '3.8'
+version: '3'
 
 services:
+  db:
+    image: postgres:13
+    container_name: postgres
+    restart: always
+    environment:
+      POSTGRES_USER: your_db_user
+      POSTGRES_PASSWORD: your_db_password
+      POSTGRES_DB: your_db_name
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    networks:
+      - backend_network
+
+  redis:
+    image: redis:6
+    container_name: redis
+    restart: always
+    networks:
+      - backend_network
+
   backend:
     build:
-      context: .
-      dockerfile: Dockerfile.backend
-    ports:
-      - "8000:8000"
+      context: ./backend
+    container_name: backend
     volumes:
       - ./backend:/app
-    environment:
-      - DEBUG=True
-
-  frontend:
-    build:
-      context: .
-      dockerfile: Dockerfile.frontend
     ports:
-      - "3000:3000"
+      - "8000:8000"
+    environment:
+      - GITHUB_TOKEN=${GITHUB_TOKEN}
+    depends_on:
+      - db
+      - redis
+    networks:
+      - backend_network
+    command: python manage.py runserver 0.0.0.0:8000
+
+  celery_worker:
+    build:
+      context: ./backend
+    container_name: celery_worker
     volumes:
-      - ./frontend:/app
+      - ./backend:/app
+    depends_on:
+      - backend
+      - redis
+    environment:
+      - GITHUB_TOKEN=${GITHUB_TOKEN}
+    command: celery -A config worker --loglevel=info
+    networks:
+      - backend_network
+
+  celery_beat:
+    build:
+      context: ./backend
+    container_name: celery_beat
+    volumes:
+      - ./backend:/app
+    depends_on:
+      - backend
+      - redis
+    environment:
+      - GITHUB_TOKEN=${GITHUB_TOKEN}
+    command: celery -A config beat --loglevel=info
+    networks:
+      - backend_network
+
+volumes:
+  postgres_data:
+
+networks:
+  backend_network:
