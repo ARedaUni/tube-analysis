@@ -10,12 +10,17 @@ import os
 def fetch_repository_data(repo_full_name):
     print(f"Fetching data for repository: {repo_full_name}")
     token = os.getenv("GITHUB_TOKEN")
+    print(token)
     if not token:
         print("GitHub token not found!")
         return
 
-    github_client = Github(token)
-    repo = github_client.get_repo(repo_full_name)
+    try:
+        github_client = Github(token)
+        repo = github_client.get_repo(repo_full_name)
+    except Exception as e:
+        print(f"Failed to fetch repository data: {e}")
+        return
 
     # Save repository data
     repository, created = Repository.objects.update_or_create(
@@ -30,7 +35,6 @@ def fetch_repository_data(repo_full_name):
             'updated_at': repo.updated_at,
         }
     )
-
     print(f"Repository {'created' if created else 'updated'}: {repository}")
 
     # Save Contributors
@@ -58,20 +62,29 @@ def fetch_repository_data(repo_full_name):
     closed_issues_count = 0
     open_issues_count = 0
 
+    issue_objects = []
     for issue in issues:
         if issue.pull_request:
             continue  # Skip pull requests here
+
+        # Calculate response time
+        first_response_time = None
+        if issue.comments:
+            first_response_time = issue.get_comments()[0].created_at - issue.created_at
+
         issue_obj, _ = Issue.objects.update_or_create(
             repository=repository,
             issue_number=issue.number,
             defaults={
-                'title': issue.title,
+                'title': issue.title[:255],
                 'body': issue.body,
-                'state': issue.state,
+                'state': issue.state[:50],
                 'created_at': issue.created_at,
                 'closed_at': issue.closed_at,
+                'response_time': first_response_time,
             }
         )
+        issue_objects.append(issue_obj)
 
         # Track issue close time
         if issue.state == 'closed' and issue.closed_at:
@@ -91,9 +104,16 @@ def fetch_repository_data(repo_full_name):
     merged_pr_count = 0
     unmerged_pr_count = 0
 
+    pull_request_objects = []
     for pr in pull_requests:
         if pr.created_at < since_date:
             continue  # Skip PRs created before the last 7 days
+
+        # Calculate PR response time
+        first_response_time = None
+        if pr.comments:
+            first_response_time = pr.get_issue_comments()[0].created_at - pr.created_at
+
         pr_obj, _ = PullRequest.objects.update_or_create(
             repository=repository,
             pr_number=pr.number,
@@ -104,8 +124,10 @@ def fetch_repository_data(repo_full_name):
                 'merged': pr.is_merged(),
                 'created_at': pr.created_at,
                 'merged_at': pr.merged_at,
+                'response_time': first_response_time,
             }
         )
+        pull_request_objects.append(pr_obj)
 
         # Track PR merge time
         if pr.is_merged() and pr.merged_at:
@@ -120,40 +142,83 @@ def fetch_repository_data(repo_full_name):
     )
 
     # Sentiment Analysis of Comments (Last 7 Days)
-    sentiment_analyzer = pipeline("sentiment-analysis")
+    sentiment_analyzer = pipeline("sentiment-analysis", model="distilbert-base-uncased-finetuned-sst-2-english")
+    positive_comments = 0
+    negative_comments = 0
+    neutral_comments = 0
+
+    comment_objects = []
     for issue in issues:
         comments = issue.get_comments(since=since_date)
         for comment in comments:
-            sentiment = sentiment_analyzer(comment.body)[0]
-            Comment.objects.update_or_create(
+            try:
+                sentiment = sentiment_analyzer(comment.body)[0]
+            except Exception as e:
+                print(f"Sentiment analysis failed for comment: {comment.body}, error: {e}")
+                continue
+
+            sentiment_label = sentiment['label']
+            if sentiment_label == 'POSITIVE':
+                positive_comments += 1
+            elif sentiment_label == 'NEGATIVE':
+                negative_comments += 1
+            else:
+                neutral_comments += 1
+
+            comment_obj = Comment(
                 repository=repository,
                 content_type='issue',
                 object_id=issue.number,
                 author=comment.user.login,
-                defaults={
-                    'body': comment.body,
-                    'created_at': comment.created_at,
-                    'sentiment': sentiment['label'],  # e.g., 'POSITIVE', 'NEGATIVE', 'NEUTRAL'
-                }
+                body=comment.body,
+                created_at=comment.created_at,
+                sentiment=sentiment_label,
             )
+            comment_objects.append(comment_obj)
 
     for pr in pull_requests:
         if pr.created_at < since_date:
             continue
-        comments = pr.get_issue_comments(since=since_date)
-        for comment in comments:
-            sentiment = sentiment_analyzer(comment.body)[0]
-            Comment.objects.update_or_create(
+
+        comments = pr.get_issue_comments()  # No 'since' argument here
+        filtered_comments = [comment for comment in comments if comment.created_at >= since_date]
+
+        for comment in filtered_comments:
+            try:
+                sentiment = sentiment_analyzer(comment.body)[0]
+            except Exception as e:
+                print(f"Sentiment analysis failed for comment: {comment.body}, error: {e}")
+                continue
+
+            sentiment_label = sentiment['label']
+            if sentiment_label == 'POSITIVE':
+                positive_comments += 1
+            elif sentiment_label == 'NEGATIVE':
+                negative_comments += 1
+            else:
+                neutral_comments += 1
+
+            comment_obj = Comment(
                 repository=repository,
                 content_type='pull_request',
                 object_id=pr.number,
                 author=comment.user.login,
-                defaults={
-                    'body': comment.body,
-                    'created_at': comment.created_at,
-                    'sentiment': sentiment['label'],
-                }
+                body=comment.body,
+                created_at=comment.created_at,
+                sentiment=sentiment_label,
             )
+            comment_objects.append(comment_obj)
+
+    # Bulk save data for better performance
+    Comment.objects.bulk_create(comment_objects, ignore_conflicts=True)
+    Issue.objects.bulk_update(issue_objects, ['response_time'])
+    PullRequest.objects.bulk_update(pull_request_objects, ['response_time'])
+
+    # Calculate sentiment percentages
+    total_comments = positive_comments + negative_comments + neutral_comments
+    positive_percentage = (positive_comments / total_comments) * 100 if total_comments else 0
+    negative_percentage = (negative_comments / total_comments) * 100 if total_comments else 0
+    neutral_percentage = (neutral_comments / total_comments) * 100 if total_comments else 0
 
     # Update repository metrics
     repository.avg_issue_close_time = avg_issue_close_time
@@ -163,6 +228,9 @@ def fetch_repository_data(repo_full_name):
     repository.closed_issues_count = closed_issues_count
     repository.merged_pr_count = merged_pr_count
     repository.unmerged_pr_count = unmerged_pr_count
+    repository.positive_comment_percentage = positive_percentage
+    repository.negative_comment_percentage = negative_percentage
+    repository.neutral_comment_percentage = neutral_percentage
     repository.save()
 
     print(f"Updated repository metrics for {repository.name}")

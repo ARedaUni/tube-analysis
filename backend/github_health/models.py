@@ -20,6 +20,9 @@ class Repository(models.Model):
     closed_issues_count = models.IntegerField(default=0)
     merged_pr_count = models.IntegerField(default=0)
     unmerged_pr_count = models.IntegerField(default=0)
+    positive_comment_percentage = models.FloatField(default=0)
+    negative_comment_percentage = models.FloatField(default=0)
+    neutral_comment_percentage = models.FloatField(default=0)
 
     def __str__(self):
         return f"{self.owner}/{self.name}"
@@ -38,9 +41,10 @@ class Issue(models.Model):
     title = models.CharField(max_length=255)
     body = models.TextField(null=True, blank=True)
     state = models.CharField(max_length=50)  # e.g., 'open', 'closed'
-    sentiment = models.FloatField(null=True, blank=True)
+    sentiment = models.TextField(null=True, blank=True)
     created_at = models.DateTimeField()
     closed_at = models.DateTimeField(null=True, blank=True)
+    response_time = models.DurationField(null=True, blank=True)  # Add this field
 
     def __str__(self):
         return f"Issue #{self.issue_number}: {self.title}"
@@ -54,6 +58,7 @@ class PullRequest(models.Model):
     merged = models.BooleanField(default=False)
     created_at = models.DateTimeField()
     merged_at = models.DateTimeField(null=True, blank=True)
+    response_time = models.DurationField(null=True, blank=True)  # Add this field
 
     def __str__(self):
         return f"PR #{self.pr_number}: {self.title}"
@@ -62,7 +67,7 @@ class Comment(models.Model):
     repository = models.ForeignKey(Repository, on_delete=models.CASCADE)
     author = models.CharField(max_length=255)
     body = models.TextField()
-    sentiment = models.FloatField(null=True, blank=True)
+    sentiment = models.TextField(null=True, blank=True)
     created_at = models.DateTimeField()
     # Generic Relation to Issue or Pull Request
     content_type = models.CharField(max_length=50)  # 'issue' or 'pull_request'
