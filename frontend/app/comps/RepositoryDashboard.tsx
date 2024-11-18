@@ -167,15 +167,17 @@ import IssueAnalytics from './IssueAnalytics'
 import PullRequestInsights from './PullRequestInsights'
 import LoadingSpinner from './LoadingSpinner'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { useRepository } from '@/hooks/useRepository'
 const capitalize = (str) => str.charAt(0).toUpperCase() + str.slice(1);
 
 
 export default function DashboardPage() {
-  const { data: repositories, isLoading, error } = useQuery({
-    queryKey: ['repositories'],
-    queryFn: () => fetchRepositoryDetails('deno'),
-  })
-  repositories && console.log(repositories)
+  // const { data: repositories, isLoading, error } = useQuery({
+  //   queryKey: ['repositories'],
+  //   queryFn: () => fetchRepositoryDetails('deno'),
+  // })
+  // repositories && console.log(repositories)
+  const { repository, isLoading, error } = useRepository()
   if (isLoading) {
     return <LoadingSpinner />
   }
@@ -188,15 +190,12 @@ export default function DashboardPage() {
     )
   }
 
-  // For demo purposes, select the first repository from the list
-  const repository = repositories
-
   return (
     <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
       <div className="flex items-center justify-between space-y-2">
         <h2 className="text-3xl font-bold tracking-tight">Dashboard</h2>
         <div className="flex items-center space-x-2">
-          <RepositorySelector repository={repository} />
+          <RepositorySelector />
         </div>
       </div>
       {repository ? (
@@ -207,7 +206,7 @@ export default function DashboardPage() {
                 <CardTitle className='text-4xl'>{capitalize(repository.name)}</CardTitle>
               </CardHeader>
               <CardContent className="pl-2">
-                <RepositoryOverview repository={repository} />
+                <RepositoryOverview />
               </CardContent>
             </Card>
          
@@ -218,7 +217,7 @@ export default function DashboardPage() {
                 <CardTitle>Issue Analytics</CardTitle>
               </CardHeader>
               <CardContent>
-                <IssueAnalytics repository={repository} />
+                <IssueAnalytics />
               </CardContent>
             </Card>
             <Card className="col-span-3">

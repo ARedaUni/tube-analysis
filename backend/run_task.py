@@ -10,16 +10,16 @@ from github_health.tasks import fetch_repository_data
 
 # List of repositories to fetch data for
 repositories =[
-  "30-seconds/30-seconds-of-code",
-  "vinta/awesome-python", 
-  "public-apis/public-apis",
-  "picocss/pico", 
-  "pallets/flask",
-  "marijnh/Eloquent-JavaScript", 
-  "typicode/jsonplaceholder", 
-  "mgechev/tiny-angular", 
-  "sibtc/django-beginners-guide", 
-  "volkansah/to-do-list" 
+    # "MunGell/awesome-for-beginners",
+    # "Helium-He/Notes_app",
+    # "klassmann/http-lua",
+    # "andy5995/canfigger",
+    # "cedrickchee/experiments",
+    # "dewanakl/dikitlink",
+    # "Rasol-Unlimited/Small-projects-with-c",
+    # "Mini-Ware/Random-Ideas",
+    # "eliasku/unit",
+    "KirosinZ/-University-Cone-render-OpenGL"
 ]
 
 

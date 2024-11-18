@@ -24,6 +24,38 @@ class Repository(models.Model):
     negative_comment_percentage = models.FloatField(default=0)
     neutral_comment_percentage = models.FloatField(default=0)
 
+    # Activity Metrics
+    commit_count = models.IntegerField(default=0)
+    commit_frequency = models.FloatField(default=0)  # Average commits per week
+    code_frequency = models.JSONField(default=dict)  # Weekly additions/deletions
+    
+    # Community Health
+    contributing_guidelines = models.BooleanField(default=False)
+    code_of_conduct = models.BooleanField(default=False)
+    issue_template = models.BooleanField(default=False)
+    pr_template = models.BooleanField(default=False)
+    
+    # Code Quality
+    languages = models.JSONField(default=dict)  # Language distribution
+    dependencies = models.JSONField(default=dict)  # Project dependencies
+    
+    # Response Times
+    median_issue_response_time = models.DurationField(null=True)
+    median_pr_response_time = models.DurationField(null=True)
+    
+    # Issue Analytics
+    issue_categories = models.JSONField(default=dict)  # Categorized issues
+    issue_resolution_rate = models.FloatField(default=0)
+    
+    # PR Analytics
+    pr_merge_rate = models.FloatField(default=0)
+    pr_review_count = models.IntegerField(default=0)
+    
+    # Community Growth
+    star_growth_rate = models.FloatField(default=0)
+    fork_growth_rate = models.FloatField(default=0)
+    contributor_growth_rate = models.FloatField(default=0)
+
     def __str__(self):
         return f"{self.owner}/{self.name}"
 

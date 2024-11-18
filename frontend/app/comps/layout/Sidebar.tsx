@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation'
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { BarChart, GitBranch, GitPullRequest, Home, Users } from 'lucide-react'
+import { Activity, BarChart, Code, GitBranch, GitPullRequest, Home, Users } from 'lucide-react'
 
 const sidebarNavItems = [
   {
@@ -19,14 +19,24 @@ const sidebarNavItems = [
     icon: BarChart,
   },
   {
-    title: "Contributors",
-    href: "/contributors",
+    title: "Issues & PRs",
+    href: "/issues",
+    icon: GitBranch,
+  },
+  {
+    title: 'Code Analytics',
+    href: '/code-analytics',
+    icon: Code,
+  },
+  {
+    title: 'Community',
+    href: '/community-health',
     icon: Users,
   },
   {
-    title: "Issues",
-    href: "/issues",
-    icon: GitBranch,
+    title: 'Performance',
+    href: '/performance',
+    icon: Activity,
   },
 ]
 

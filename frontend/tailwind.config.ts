@@ -9,6 +9,15 @@ export default {
   ],
   theme: {
   	extend: {
+		screens:{
+			'xs': '475px',
+		},
+		fontSize: {
+			'2xs': '0.625rem', // Even smaller than xs for mobile
+		  },
+		  spacing: {
+			'2xs': '0.125rem',
+		  },
   		colors: {
   			background: 'hsl(var(--background))',
   			foreground: 'hsl(var(--foreground))',

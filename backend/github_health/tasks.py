@@ -5,6 +5,7 @@ from django.utils import timezone
 from .models import Repository, Contributor, Issue, PullRequest, Comment
 from transformers import pipeline
 import os
+from collections import defaultdict
 
 @shared_task
 def fetch_repository_data(repo_full_name):
@@ -142,7 +143,7 @@ def fetch_repository_data(repo_full_name):
     )
 
     # Sentiment Analysis of Comments (Last 7 Days)
-    sentiment_analyzer = pipeline("sentiment-analysis", model="distilbert-base-uncased-finetuned-sst-2-english")
+    sentiment_analyzer = pipeline("sentiment-analysis", model="distilbert-base-uncased")
     positive_comments = 0
     negative_comments = 0
     neutral_comments = 0
@@ -220,17 +221,67 @@ def fetch_repository_data(repo_full_name):
     negative_percentage = (negative_comments / total_comments) * 100 if total_comments else 0
     neutral_percentage = (neutral_comments / total_comments) * 100 if total_comments else 0
 
-    # Update repository metrics
-    repository.avg_issue_close_time = avg_issue_close_time
-    repository.avg_pr_merge_time = avg_pr_merge_time
-    repository.top_contributors = ', '.join([c[0] for c in top_contributors])
-    repository.open_issues_count = open_issues_count
-    repository.closed_issues_count = closed_issues_count
-    repository.merged_pr_count = merged_pr_count
-    repository.unmerged_pr_count = unmerged_pr_count
-    repository.positive_comment_percentage = positive_percentage
-    repository.negative_comment_percentage = negative_percentage
-    repository.neutral_comment_percentage = neutral_percentage
+    # Fetch commit statistics
+    commits = repo.get_commits(since=since_date)
+    commit_count = 0
+    weekly_commits = defaultdict(int)
+    
+    for commit in commits:
+        commit_count += 1
+        week = commit.commit.author.date.isocalendar()[1]
+        weekly_commits[week] += 1
+    
+    # Calculate commit frequency
+    commit_frequency = commit_count / 7  # Average per day
+    
+    # Fetch code frequency (additions/deletions)
+    code_freq = repo.get_stats_code_frequency()
+    code_frequency = {
+        'additions': [stat.additions for stat in code_freq],
+        'deletions': [stat.deletions for stat in code_freq]
+    } if code_freq else {}
+    
+    # Check community health files
+    try:
+        community = repo.get_community_profile()
+        contributing_exists = community.files.contributing is not None
+        coc_exists = community.files.code_of_conduct is not None
+        issue_template_exists = community.files.issue_template is not None
+        pr_template_exists = community.files.pull_request_template is not None
+    except:
+        contributing_exists = coc_exists = issue_template_exists = pr_template_exists = False
+    
+    # Fetch language distribution
+    languages = repo.get_languages()
+    
+    # Calculate growth rates
+    star_history = repo.get_stargazers_with_dates()
+    star_counts = defaultdict(int)
+    for star in star_history:
+        week = star.starred_at.isocalendar()[1]
+        star_counts[week] += 1
+    
+    star_growth_rate = sum(star_counts.values()) / len(star_counts) if star_counts else 0
+    
+    # Update repository with new metrics
+    repository.commit_count = commit_count
+    repository.commit_frequency = commit_frequency
+    repository.code_frequency = code_frequency
+    repository.contributing_guidelines = contributing_exists
+    repository.code_of_conduct = coc_exists
+    repository.issue_template = issue_template_exists
+    repository.pr_template = pr_template_exists
+    repository.languages = languages
+    repository.star_growth_rate = star_growth_rate
+    
+    # Calculate issue resolution rate
+    if closed_issues_count + open_issues_count > 0:
+        repository.issue_resolution_rate = (closed_issues_count / (closed_issues_count + open_issues_count)) * 100
+    
+    # Calculate PR merge rate
+    if merged_pr_count + unmerged_pr_count > 0:
+        repository.pr_merge_rate = (merged_pr_count / (merged_pr_count + unmerged_pr_count)) * 100
+    
     repository.save()
 
     print(f"Updated repository metrics for {repository.name}")

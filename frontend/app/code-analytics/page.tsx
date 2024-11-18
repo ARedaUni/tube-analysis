@@ -2,13 +2,12 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { useRepository } from "@/hooks/useRepository"
 import LoadingSpinner from "../comps/LoadingSpinner"
-import { IssueMetrics } from "../comps/IssueMetrics"
-import { PRMetrics } from "../comps/PRMetrics"
-import { TimelineView } from "../comps/TimelineView"
-import { LabelAnalysis } from "../comps/LabelAnalysis"
-import { ReviewAnalytics } from "../comps/ReviewAnalytics"
+import { LanguageDistribution } from "../comps/LanguageDistribution"
+import { CommitActivity } from "../comps/CommitActivity"
+import { CodeFrequency } from "../comps/CodeFrequency"
+import { DependencyGraph } from "../comps/DependencyGraph"
 
-export default function IssuesPRsPage() {
+export default function CodeAnalyticsPage() {
   const { repository, isLoading, error } = useRepository()
 
   if (isLoading) return <LoadingSpinner />
@@ -18,47 +17,39 @@ export default function IssuesPRsPage() {
   return (
     <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
       <div className="flex items-center justify-between space-y-2">
-        <h2 className="text-3xl font-bold tracking-tight">Issues & Pull Requests</h2>
+        <h2 className="text-3xl font-bold tracking-tight">Code Analytics</h2>
       </div>
       <div className="grid gap-4 md:grid-cols-2">
-        <Card className="col-span-2">
+        <Card>
           <CardHeader>
-            <CardTitle>Activity Timeline</CardTitle>
+            <CardTitle>Language Distribution</CardTitle>
           </CardHeader>
           <CardContent>
-            <TimelineView />
+            <LanguageDistribution />
           </CardContent>
         </Card>
         <Card>
           <CardHeader>
-            <CardTitle>Issue Analytics</CardTitle>
+            <CardTitle>Commit Activity</CardTitle>
           </CardHeader>
           <CardContent>
-            <IssueMetrics />
+            <CommitActivity />
           </CardContent>
         </Card>
         <Card>
           <CardHeader>
-            <CardTitle>PR Analytics</CardTitle>
+            <CardTitle>Code Frequency</CardTitle>
           </CardHeader>
           <CardContent>
-            <PRMetrics />
+            <CodeFrequency />
           </CardContent>
         </Card>
         <Card>
           <CardHeader>
-            <CardTitle>Label Distribution</CardTitle>
+            <CardTitle>Dependency Graph</CardTitle>
           </CardHeader>
           <CardContent>
-            <LabelAnalysis />
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle>Review Analytics</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ReviewAnalytics />
+            <DependencyGraph />
           </CardContent>
         </Card>
       </div>

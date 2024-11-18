@@ -33,3 +33,18 @@ export const fetchRepositoryNames = async () => {
   const { data } = await API.get('/repositories/names-only/')
   return data
 }
+
+export const fetchRepositoryMetrics = async (repositoryId: number) => {
+  const { data } = await API.get(`/repositories/${repositoryId}/metrics/`)
+  return data
+}
+
+export const fetchCodeAnalytics = async (repositoryId: number) => {
+  const { data } = await API.get(`/repositories/${repositoryId}/code-analytics/`)
+  return data
+}
+
+export const fetchCommunityMetrics = async (repositoryId: number) => {
+  const { data } = await API.get(`/repositories/${repositoryId}/community-metrics/`)
+  return data
+}
