@@ -28,3 +28,8 @@ export const fetchPullRequests = async (repositoryId: number) => {
   const { data } = await API.get(`/repositories/${repositoryId}/pull-requests/`)
   return data
 }
+
+export const fetchRepositoryNames = async () => {
+  const { data } = await API.get('/repositories/names-only/')
+  return data
+}

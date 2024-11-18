@@ -167,11 +167,13 @@ import IssueAnalytics from './IssueAnalytics'
 import PullRequestInsights from './PullRequestInsights'
 import LoadingSpinner from './LoadingSpinner'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+const capitalize = (str) => str.charAt(0).toUpperCase() + str.slice(1);
+
 
 export default function DashboardPage() {
   const { data: repositories, isLoading, error } = useQuery({
     queryKey: ['repositories'],
-    queryFn: () => fetchRepositoryDetails('Hello-World'),
+    queryFn: () => fetchRepositoryDetails('deno'),
   })
   repositories && console.log(repositories)
   if (isLoading) {
@@ -194,77 +196,23 @@ export default function DashboardPage() {
       <div className="flex items-center justify-between space-y-2">
         <h2 className="text-3xl font-bold tracking-tight">Dashboard</h2>
         <div className="flex items-center space-x-2">
-          <RepositorySelector repositories={repositories} />
+          <RepositorySelector repository={repository} />
         </div>
       </div>
       {repository ? (
         <Suspense fallback={<LoadingSpinner />}>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-           {/* Total Stars */}
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Stars</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{repository.stars}</div>
-              <p className="text-xs text-muted-foreground">Stars from API</p>
-            </CardContent>
-          </Card>
-
-          {/* Open Issues */}
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Open Issues</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{repository.open_issues_count}</div>
-              <p className="text-xs text-muted-foreground">Open issues from API</p>
-            </CardContent>
-          </Card>
-
-          {/* Forks */}
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Forks</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{repository.forks}</div>
-              <p className="text-xs text-muted-foreground">Forks from API</p>
-            </CardContent>
-          </Card>
-
-          {/* Contributors */}
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Contributors</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{repository.contributors.length}</div>
-              <p className="text-xs text-muted-foreground">Contributors count</p>
-            </CardContent>
-          </Card>
-        </div>
-        
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-            <Card className="col-span-4">
+          <Card className="col-span-4">
               <CardHeader>
-                <CardTitle>Repository Overview</CardTitle>
+                <CardTitle className='text-4xl'>{capitalize(repository.name)}</CardTitle>
               </CardHeader>
               <CardContent className="pl-2">
                 <RepositoryOverview repository={repository} />
               </CardContent>
             </Card>
-            <Card className="col-span-3">
-              <CardHeader>
-                <CardTitle>Contributor Insights</CardTitle>
-                <CardDescription>Top contributors and their impact</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ContributorInsights repositoryId={repository.id} />
-              </CardContent>
-            </Card>
-          </div>
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
+         
+        </div>
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
             <Card className="col-span-4">
               <CardHeader>
                 <CardTitle>Issue Analytics</CardTitle>
@@ -282,6 +230,19 @@ export default function DashboardPage() {
               </CardContent>
             </Card>
           </div>
+          <div className="grid gap-4 ">
+          
+            <Card className="col-span-3">
+              <CardHeader>
+                <CardTitle>Contributor Insights</CardTitle>
+                <CardDescription>Top contributors and their impact</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ContributorInsights repositoryId={repository.id} />
+              </CardContent>
+            </Card>
+          </div>
+        
         </Suspense>
       ) : (
         <div className="text-center">

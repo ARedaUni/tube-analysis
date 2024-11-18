@@ -10,15 +10,16 @@ from github_health.tasks import fetch_repository_data
 
 # List of repositories to fetch data for
 repositories =[
-    "tastejs/todomvc",
-    "typicode/json-server",
-    "codetriage/clockwork",
-    "notwaldorf/emojilib",
-    "github/codeowners",
-    "simple-icons/simple-icons",
-    "necolas/normalize.css",
-    "adam-p/markdown-here",
-    "realpython/python-guide"
+  "30-seconds/30-seconds-of-code",
+  "vinta/awesome-python", 
+  "public-apis/public-apis",
+  "picocss/pico", 
+  "pallets/flask",
+  "marijnh/Eloquent-JavaScript", 
+  "typicode/jsonplaceholder", 
+  "mgechev/tiny-angular", 
+  "sibtc/django-beginners-guide", 
+  "volkansah/to-do-list" 
 ]
 
 

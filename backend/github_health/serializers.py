@@ -53,3 +53,17 @@ class RepositorySerializer(serializers.ModelSerializer):
             'positive_comment_percentage', 'negative_comment_percentage', 
             'neutral_comment_percentage', 'contributors', 'issues', 'pull_requests'
         ]
+        
+class RepositoryLightSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Repository
+        fields = '__all__'  # Include all fields
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+
+        # Dynamically exclude contributors and issues
+        data.pop('contributors', None)
+        data.pop('issues', None)
+        return data
+

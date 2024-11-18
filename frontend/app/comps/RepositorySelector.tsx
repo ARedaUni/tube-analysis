@@ -16,16 +16,24 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover'
-
-const repositories = [
-  { value: 'react', label: 'facebook/react' },
-  { value: 'next', label: 'vercel/next.js' },
-  { value: 'svelte', label: 'sveltejs/svelte' },
-]
+import { useQuery } from '@tanstack/react-query'
+import { fetchRepositoryNames } from '@/services/api'
 
 export default function RepositorySelector() {
   const [open, setOpen] = useState(false)
   const [value, setValue] = useState('')
+
+  const { data: repositories = [], isLoading } = useQuery({
+    queryKey: ['repositoryNames'],
+    queryFn: fetchRepositoryNames,
+    initialData: [],
+  })
+
+  // const { data: selectedRepository, refetch: refetchRepository } = useQuery({
+  //   queryKey: ['repository', value],
+  //   queryFn: () => fetchRepositoryByName(value),
+  //   enabled: !!value,
+  // })
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -35,10 +43,9 @@ export default function RepositorySelector() {
           role="combobox"
           aria-expanded={open}
           className="w-[300px] justify-between"
+          disabled={isLoading}
         >
-          {value
-            ? repositories.find((repository) => repository.value === value)?.label
-            : 'Select repository...'}
+          {value || (isLoading ? 'Loading...' : 'Select repository...')}
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
@@ -47,10 +54,10 @@ export default function RepositorySelector() {
           <CommandInput placeholder="Search repository..." />
           <CommandEmpty>No repository found.</CommandEmpty>
           <CommandGroup>
-            {repositories.map((repository) => (
+            {Array.isArray(repositories) && repositories.map((repository) => (
               <CommandItem
-                key={repository.value}
-                value={repository.value}
+                key={repository}
+                value={repository}
                 onSelect={(currentValue) => {
                   setValue(currentValue === value ? '' : currentValue)
                   setOpen(false)
@@ -59,10 +66,10 @@ export default function RepositorySelector() {
                 <Check
                   className={cn(
                     'mr-2 h-4 w-4',
-                    value === repository.value ? 'opacity-100' : 'opacity-0'
+                    value === repository ? 'opacity-100' : 'opacity-0'
                   )}
                 />
-                {repository.label}
+                {repository}
               </CommandItem>
             ))}
           </CommandGroup>

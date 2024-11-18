@@ -4,7 +4,7 @@ from rest_framework.decorators import action
 from django.db.models import Avg
 from .models import Repository, Contributor, Issue, PullRequest, Comment
 from .serializers import (
-    RepositorySerializer, ContributorSerializer, IssueSerializer,
+    RepositoryLightSerializer, RepositorySerializer, ContributorSerializer, IssueSerializer,
     PullRequestSerializer, CommentSerializer
 )
 
@@ -26,22 +26,33 @@ class RepositoryStatsView(APIView):
 
 
 class RepositoryViewSet(viewsets.ReadOnlyModelViewSet):
-    queryset = Repository.objects.select_related().prefetch_related('contributors', 'issues', 'pull_requests')
+    queryset = Repository.objects.select_related().prefetch_related('pull_requests')
     serializer_class = RepositorySerializer
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ['name', 'owner', 'created_at']
 
-
     @action(detail=False, methods=['get'], url_path='by-name/(?P<name>[^/.]+)')
     def get_by_name(self, request, name=None):
         try:
-            repository = Repository.objects.get(name=name)
-            serializer = self.get_serializer(repository)
+            # Fetch repository without fetching unnecessary related fields
+            repository = Repository.objects.only(
+                'id', 'name', 'owner', 'description', 'stars', 'forks', 'open_issues',
+                'created_at', 'updated_at', 'avg_issue_close_time', 'avg_pr_merge_time',
+                'top_contributors', 'open_issues_count', 'closed_issues_count',
+                'merged_pr_count', 'unmerged_pr_count', 'positive_comment_percentage',
+                'negative_comment_percentage', 'neutral_comment_percentage'
+            ).get(name=name)
+
+            serializer = RepositoryLightSerializer(repository)
             return Response(serializer.data, status=status.HTTP_200_OK)
         except Repository.DoesNotExist:
             return Response({'error': 'Repository not found'}, status=status.HTTP_404_NOT_FOUND)
         
-        
+    @action(detail=False, methods=['get'], url_path='names-only')
+    def names_only(self, request):
+        repositories = Repository.objects.only('name').values_list('name', flat=True)
+        return Response(repositories, status=status.HTTP_200_OK)
+
 class ActivityTimelineView(APIView):
     def get(self, request, repository_id):
         issues = Issue.objects.filter(repository__id=repository_id).values('title', 'created_at')

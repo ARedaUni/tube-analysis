@@ -16,4 +16,5 @@ urlpatterns = [
     path('repositories/<int:repository_id>/timeline/', ActivityTimelineView.as_view(), name='repository-timeline'),
     path('repositories/compare/', RepositoryComparisonView.as_view(), name='repository-compare'),
     path('repositories/by-name/<str:name>', RepositoryViewSet.as_view({'get': 'get_by_name'}), name='repository-by-name'),
+    path('repositories/names-only/', RepositoryViewSet.as_view({'get': 'names_only'}), name='repository-names'),
 ]

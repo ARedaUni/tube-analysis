@@ -8,7 +8,7 @@ const recentIssues = [
   { title: 'Refactor authentication logic', status: 'in progress', priority: 'medium', assignee: 'Edward' },
 ]
 
-export function IssueList() {
+export function IssueList({id}: {id: number}) {
   return (
     <div className="space-y-8">
       {recentIssues.map((issue, index) => (

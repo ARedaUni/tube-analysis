@@ -114,6 +114,7 @@ import {
   Tooltip,
   Legend,
 } from 'chart.js'
+import { useState } from 'react'
 
 ChartJS.register(
   CategoryScale,
@@ -138,6 +139,9 @@ export default function ContributorInsights({ repositoryId }: { repositoryId: nu
     enabled: !!repositoryId, // Only fetch when repositoryId is available
   })
 
+  const [currentPage, setCurrentPage] = useState(1)
+  const itemsPerPage = 5
+
   if (isLoading) {
     return <div>Loading contributors...</div>
   }
@@ -149,6 +153,13 @@ export default function ContributorInsights({ repositoryId }: { repositoryId: nu
       </div>
     )
   }
+
+  // Pagination logic
+  const totalPages = Math.ceil(contributors.length / itemsPerPage)
+  const paginatedContributors = contributors.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  )
 
   const chartData = {
     labels: contributors.map((c: Contributor) => c.username),
@@ -179,6 +190,14 @@ export default function ContributorInsights({ repositoryId }: { repositoryId: nu
     },
   }
 
+  const handleNextPage = () => {
+    if (currentPage < totalPages) setCurrentPage((prev) => prev + 1)
+  }
+
+  const handlePreviousPage = () => {
+    if (currentPage > 1) setCurrentPage((prev) => prev - 1)
+  }
+
   return (
     <div className="space-y-4">
       {/* Chart */}
@@ -200,7 +219,7 @@ export default function ContributorInsights({ repositoryId }: { repositoryId: nu
               </TableRow>
             </TableHeader>
             <TableBody>
-              {contributors.map((contributor: Contributor) => (
+              {paginatedContributors.map((contributor: Contributor) => (
                 <TableRow key={contributor.id}>
                   <TableCell className="font-medium">{contributor.username}</TableCell>
                   <TableCell>{contributor.contributions}</TableCell>
@@ -213,6 +232,27 @@ export default function ContributorInsights({ repositoryId }: { repositoryId: nu
           </Table>
         </CardContent>
       </Card>
+
+      {/* Pagination Controls */}
+      <div className="flex justify-between items-center mt-4">
+        <button
+          onClick={handlePreviousPage}
+          disabled={currentPage === 1}
+          className={`px-4 py-2 rounded ${currentPage === 1 ? 'bg-gray-300' : 'bg-blue-500 text-white'}`}
+        >
+          Previous
+        </button>
+        <span>
+          Page {currentPage} of {totalPages}
+        </span>
+        <button
+          onClick={handleNextPage}
+          disabled={currentPage === totalPages}
+          className={`px-4 py-2 rounded ${currentPage === totalPages ? 'bg-gray-300' : 'bg-blue-500 text-white'}`}
+        >
+          Next
+        </button>
+      </div>
     </div>
   )
 }
