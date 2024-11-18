@@ -9,13 +9,18 @@ django.setup()
 from github_health.tasks import fetch_repository_data
 
 # List of repositories to fetch data for
-repositories = [
-    "sindresorhus/awesome",  # Popular curated list repository
-    "denoland/deno",         # Small but active TypeScript runtime repository
-    "vercel/next.js",        # Popular but not overwhelming for analytics
-    "mitchellh/vagrant",     # Developer-focused, medium-sized repository
-    "psf/black"   # Replacing octocat/Hello-World
+repositories =[
+    "tastejs/todomvc",
+    "typicode/json-server",
+    "codetriage/clockwork",
+    "notwaldorf/emojilib",
+    "github/codeowners",
+    "simple-icons/simple-icons",
+    "necolas/normalize.css",
+    "adam-p/markdown-here",
+    "realpython/python-guide"
 ]
+
 
 # Trigger tasks for all repositories
 tasks = {}

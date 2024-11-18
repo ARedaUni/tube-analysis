@@ -81,3 +81,4 @@ export default function IssueAnalytics() {
     </div>
   )
 }
+

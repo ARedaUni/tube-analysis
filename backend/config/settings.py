@@ -42,9 +42,18 @@ INSTALLED_APPS = [
     'rest_framework',
     'github_health',  
     'django_celery_beat',
+    'django_extensions', 
+    'corsheaders',
 ]
 
+# REST_FRAMEWORK = {
+#     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+#     'PAGE_SIZE': 10,
+# }
+
+
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -129,3 +138,4 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 
 
+CORS_ALLOW_ALL_ORIGINS = True
