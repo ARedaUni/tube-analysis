@@ -162,7 +162,7 @@ import { useQuery } from '@tanstack/react-query'
 import { fetchRepositories, fetchRepositoryDetails } from '@/services/api' // Your API functions
 import RepositorySelector from './RepositorySelector'
 import RepositoryOverview from './RepositoryOverview'
-import ContributorInsights from './ContributorInsights'
+import ContributorInsights from './contributorComponents/ContributorInsights'
 import IssueAnalytics from './IssueAnalytics'
 import PullRequestInsights from './PullRequestInsights'
 import LoadingSpinner from './LoadingSpinner'
@@ -225,7 +225,7 @@ export default function DashboardPage() {
                 <CardTitle>Pull Request Insights</CardTitle>
               </CardHeader>
               <CardContent>
-                <PullRequestInsights repositoryId={repository.id} />
+                <PullRequestInsights />
               </CardContent>
             </Card>
           </div>
@@ -237,7 +237,7 @@ export default function DashboardPage() {
                 <CardDescription>Top contributors and their impact</CardDescription>
               </CardHeader>
               <CardContent>
-                <ContributorInsights repositoryId={repository.id} />
+                <ContributorInsights  />
               </CardContent>
             </Card>
           </div>

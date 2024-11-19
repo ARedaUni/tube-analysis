@@ -1,7 +1,7 @@
 'use client'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import ContributorInsights from '../comps/ContributorInsights'
-import {ContributorList} from '../comps/contributor-list'
+import ContributorInsights from '../comps/contributorComponents/ContributorInsights'
+import {ContributorList} from '../comps/contributorComponents/contributor-list'
 import { fetchRepositoryDetails } from "@/services/api"
 import { useQuery } from "@tanstack/react-query"
 import LoadingSpinner from "../comps/LoadingSpinner"

@@ -2,10 +2,10 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { useRepository } from "@/hooks/useRepository"
 import LoadingSpinner from "../comps/LoadingSpinner"
-import { ResponseTimes } from "../comps/ResponseTimes"
-import { ThroughputMetrics } from "../comps/ThroughputMetrics"
-import { TimeToResolution } from "../comps/TimeToResolution"
-import { QualityMetrics } from "../comps/QualityMetrics"
+import { ResponseTimes } from "../comps/performanceComponents/ResponseTimes"
+import { ThroughputMetrics } from "../comps/performanceComponents/ThroughputMetrics"
+import { TimeToResolution } from "../comps/performanceComponents/TimeToResolution"
+import { QualityMetrics } from "../comps/performanceComponents/QualityMetrics"
 
 export default function PerformancePage() {
   const { repository, isLoading, error } = useRepository()

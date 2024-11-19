@@ -2,11 +2,11 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { useRepository } from "@/hooks/useRepository"
 import LoadingSpinner from "../comps/LoadingSpinner"
-import { IssueMetrics } from "../comps/IssueMetrics"
-import { PRMetrics } from "../comps/PRMetrics"
-import { TimelineView } from "../comps/TimelineView"
-import { LabelAnalysis } from "../comps/LabelAnalysis"
-import { ReviewAnalytics } from "../comps/ReviewAnalytics"
+import { IssueMetrics } from "../comps/issuesandprs/IssueMetrics"
+import { PRMetrics } from "../comps/issuesandprs/PRMetrics"
+import { TimelineView } from "../comps/issuesandprs/TimelineView"
+import { LabelAnalysis } from "../comps/issuesandprs/LabelAnalysis"
+import { ReviewAnalytics } from "../comps/issuesandprs/ReviewAnalytics"
 
 export default function IssuesPRsPage() {
   const { repository, isLoading, error } = useRepository()
