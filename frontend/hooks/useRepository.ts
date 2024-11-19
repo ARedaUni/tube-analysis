@@ -6,7 +6,7 @@ export function useRepository() {
 
   const { data: repository, isLoading, error } = useQuery({
     queryKey: ['currentRepository'],
-    queryFn: () => fetchRepositoryDetails('Hello-World'), // Default repository
+    queryFn: () => fetchRepositoryDetails('deno'), // Default repository
     staleTime: Infinity, // Keep the data fresh indefinitely
   })
 

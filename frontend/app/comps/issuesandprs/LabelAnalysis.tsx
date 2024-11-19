@@ -1,47 +1,72 @@
 'use client'
+
 import { useRepository } from "@/hooks/useRepository"
-import { Doughnut } from "react-chartjs-2"
-import { Card } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { useQuery } from "@tanstack/react-query"
+import { fetchRepositoryMetrics } from "@/services/api"
+import { ResponsiveContainer,  Tooltip } from "recharts"
 
 export function LabelAnalysis() {
   const { repository } = useRepository()
 
-  const labelData = {
-    labels: Object.keys(repository.label_stats || {}),
-    datasets: [{
-      data: Object.values(repository.label_stats || {}),
-      backgroundColor: [
-        'rgba(255, 99, 132, 0.8)',
-        'rgba(54, 162, 235, 0.8)',
-        'rgba(255, 206, 86, 0.8)',
-        'rgba(75, 192, 192, 0.8)',
-        'rgba(153, 102, 255, 0.8)',
-      ]
-    }]
-  }
+  const { data: metric = {}, isLoading, error } = useQuery({
+    queryKey: ['metrics', repository?.id],
+    queryFn: () => fetchRepositoryMetrics(repository?.id),
+    enabled: !!repository?.id,
+  })
 
-  const options = {
-    responsive: true,
-    plugins: {
-      legend: {
-        position: 'right' as const
-      }
-    }
-  }
+  const labelEntries = Object.entries(repository.label_stats || {})
+  const sortedLabelEntries = labelEntries.sort((a, b) => b[1] - a[1])
+
+  const treeMapData = [{
+    name: 'Labels',
+    children: sortedLabelEntries.map(([label, count]) => ({
+      name: label,
+      size: count,
+    }))
+  }]
+
+  const COLORS = [
+    'hsl(var(--primary))',
+    'hsl(var(--secondary))',
+    'hsl(var(--accent))',
+    'hsl(var(--muted))',
+    'hsl(var(--card))',
+  ]
 
   return (
-    <div className="space-y-4">
-      <div className="h-[200px]">
-        <Doughnut data={labelData} options={options} />
-      </div>
-      <div className="flex flex-wrap gap-2">
-        {Object.entries(repository.label_stats || {}).map(([label, count]) => (
-          <Badge key={label} variant="secondary">
-            {label}: {count}
-          </Badge>
-        ))}
-      </div>
-    </div>
+    <Card className="w-full">
+      <CardHeader>
+        <CardTitle className="text-2xl font-bold">Label Analysis</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* <div className="h-[400px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <TreeMap
+                data={treeMapData}
+                dataKey="size"
+                aspectRatio={4 / 3}
+                stroke="#fff"
+                fill="#8884d8"
+              >
+                <Tooltip />
+              </TreeMap>
+            </ResponsiveContainer>
+          </div> */}
+          <div>
+            <h3 className="text-lg font-medium mb-3">Label Distribution</h3>
+            <div className="flex flex-wrap gap-2">
+              {sortedLabelEntries.map(([label, count], index) => (
+                <Badge key={label} variant="secondary" className="text-xs py-1 px-2" style={{backgroundColor: COLORS[index % COLORS.length], color: '#fff'}}>
+                  {label}: {count}
+                </Badge>
+              ))}
+            </div>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   )
 }

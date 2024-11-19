@@ -37,30 +37,25 @@ export default function IssuesPRsPage() {
             <IssueMetrics />
           </CardContent>
         </Card>
-        <Card>
+
+         <Card>
           <CardHeader>
             <CardTitle>PR Analytics</CardTitle>
           </CardHeader>
           <CardContent>
             <PRMetrics />
           </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle>Label Distribution</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <LabelAnalysis />
-          </CardContent>
-        </Card>
-        <Card>
+        </Card> 
+
+         
+        {/* <Card>
           <CardHeader>
             <CardTitle>Review Analytics</CardTitle>
           </CardHeader>
           <CardContent>
             <ReviewAnalytics />
           </CardContent>
-        </Card>
+        </Card> */}
       </div>
     </div>
   )

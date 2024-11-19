@@ -2,122 +2,88 @@
 
 import React from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
-import { Bar, BarChart, Cell, ResponsiveContainer, XAxis, YAxis } from "recharts"
 import { Clock, AlertCircle, CheckCircle } from 'lucide-react'
 import { useRepository } from '@/hooks/useRepository'
 
+const CustomBarChart = ({ data }) => {
+  const maxValue = Math.max(...data.map(item => item.value))
 
-
+  return (
+    <div className="flex flex-col space-y-2">
+      {data.map((item, index) => (
+        <div key={index} className="flex items-center space-x-2">
+          <div className="w-24 text-sm text-muted-foreground">{item.name}</div>
+          <div className="flex-1 h-8 bg-muted rounded-full overflow-hidden">
+            <div
+              className="h-full rounded-full"
+              style={{
+                width: `${(item.value / maxValue) * 100}%`,
+                backgroundColor: item.color,
+              }}
+            />
+          </div>
+          <div className="w-12 text-sm font-medium text-right">{item.value}</div>
+        </div>
+      ))}
+    </div>
+  )
+}
 
 export default function IssueAnalytics() {
-  const {repository} = useRepository();
+  const { repository } = useRepository()
   const issueStatusData = [
     { name: 'Open Issues', value: repository.open_issues_count, color: 'hsl(var(--chart-1))' },
     { name: 'Closed Issues', value: repository.closed_issues_count, color: 'hsl(var(--chart-2))' },
   ]
-  
   return (
-    <div className="space-y-3 p-2 sm:space-y-4 sm:p-4">
+    <div className="space-y-6 p-4 sm:p-6 lg:p-8">
       <Card className="overflow-hidden">
-        <CardHeader className="p-3 sm:p-4">
-          <CardTitle className="text-base sm:text-lg lg:text-xl">Issue Distribution</CardTitle>
+        <CardHeader className="p-4 sm:p-6">
+          <CardTitle className="text-lg sm:text-xl lg:text-2xl">Issue Distribution</CardTitle>
         </CardHeader>
-        <CardContent className="p-2 sm:p-4">
-          <div className="h-[200px] sm:h-[250px] lg:h-[300px]">
-            <ChartContainer config={{}}>
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart 
-                  data={issueStatusData} 
-                  layout="vertical"
-                  margin={{ 
-                    top: 5,
-                    right: window.innerWidth < 640 ? 10 : 20,
-                    bottom: 5,
-                    left: window.innerWidth < 640 ? 80 : 100
-                  }}
-                >
-                  <XAxis 
-                    type="number"
-                    tick={{ 
-                      fontSize: window.innerWidth < 640 ? 10 : 12,
-                      fill: 'hsl(var(--foreground))'
-                    }}
-                  />
-                  <YAxis 
-                    dataKey="name" 
-                    type="category" 
-                    width={window.innerWidth < 640 ? 70 : 90}
-                    tick={{ 
-                      fontSize: window.innerWidth < 640 ? 10 : 12,
-                      fill: 'hsl(var(--foreground))'
-                    }}
-                  />
-                  <ChartTooltip content={<ChartTooltipContent />} />
-                  <Bar dataKey="value">
-                    {issueStatusData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            </ChartContainer>
-          </div>
+        <CardContent className="p-4 sm:p-6">
+          <CustomBarChart data={issueStatusData} />
         </CardContent>
       </Card>
 
-      <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
-        <Card className="overflow-hidden transition-all duration-200 hover:scale-102 hover:shadow-lg bg-gradient-to-br from-red-50 to-red-100 dark:from-red-950 dark:to-red-900">
-          <CardContent className="p-3 sm:p-4 lg:p-6">
-            <div className="flex flex-col items-center justify-center space-y-2 sm:space-y-3">
-              <div className="p-2 sm:p-3 lg:p-4 rounded-full bg-red-100 dark:bg-red-800">
-                <AlertCircle className="w-6 h-6 sm:w-8 sm:h-8 lg:w-10 lg:h-10 text-red-500 dark:text-red-300" />
-              </div>
-              <span className="text-sm sm:text-base lg:text-lg font-medium text-center text-red-700 dark:text-red-300">
-                Open Issues
-              </span>
-              <span className="text-xl sm:text-2xl lg:text-3xl font-bold text-red-500 dark:text-red-400">
-                {repository.open_issues_count}
-              </span>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="overflow-hidden transition-all duration-200 hover:scale-102 hover:shadow-lg bg-gradient-to-br from-green-50 to-green-100 dark:from-green-950 dark:to-green-900">
-          <CardContent className="p-3 sm:p-4 lg:p-6">
-            <div className="flex flex-col items-center justify-center space-y-2 sm:space-y-3">
-              <div className="p-2 sm:p-3 lg:p-4 rounded-full bg-green-100 dark:bg-green-800">
-                <CheckCircle className="w-6 h-6 sm:w-8 sm:h-8 lg:w-10 lg:h-10 text-green-500 dark:text-green-300" />
-              </div>
-              <span className="text-sm sm:text-base lg:text-lg font-medium text-center text-green-700 dark:text-green-300">
-                Closed Issues
-              </span>
-              <span className="text-xl sm:text-2xl lg:text-3xl font-bold text-green-500 dark:text-green-400">
-                {repository.closed_issues_count}
-              </span>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="overflow-hidden transition-all duration-200 hover:scale-102 hover:shadow-lg bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950 dark:to-blue-900 xs:col-span-2 md:col-span-1">
-          <CardContent className="p-3 sm:p-4 lg:p-6">
-            <div className="flex flex-col items-center justify-center space-y-2 sm:space-y-3">
-              <div className="p-2 sm:p-3 lg:p-4 rounded-full bg-blue-100 dark:bg-blue-800">
-                <Clock className="w-6 h-6 sm:w-8 sm:h-8 lg:w-10 lg:h-10 text-blue-500 dark:text-blue-300" />
-              </div>
-              <span className="text-sm sm:text-base lg:text-lg font-medium text-center text-blue-700 dark:text-blue-300">
-                Avg. Issue Close Time
-              </span>
-              <span className="text-xl sm:text-2xl lg:text-3xl font-bold text-blue-500 dark:text-blue-400">
-                {Math.round(parseFloat(repository.avg_issue_close_time?.split(' ')[0]))}
-              </span>
-              <span className="text-xs sm:text-sm lg:text-base font-medium text-blue-600 dark:text-blue-300">
-                days
-              </span>
-            </div>
-          </CardContent>
-        </Card>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+        <StatCard
+          title="Open Issues"
+          value={repository.open_issues_count}
+          icon={AlertCircle}
+          gradientFrom="from-red-500/10"
+          gradientTo="to-orange-500/10"
+          textColor="text-red-500"
+        />
+        <StatCard
+          title="Closed Issues"
+          value={repository.closed_issues_count}
+          icon={CheckCircle}
+          gradientFrom="from-green-500/10"
+          gradientTo="to-emerald-500/10"
+          textColor="text-green-500"
+        />
+        <StatCard
+          title="Avg. Issue Close Time"
+          value={Math.round(parseFloat(repository.avg_issue_close_time?.split(' ')[0]))}
+          icon={Clock}
+          gradientFrom="from-blue-500/10"
+          gradientTo="to-cyan-500/10"
+          textColor="text-blue-500"
+          unit="days"
+        />
       </div>
+    </div>
+  )
+}
+
+function StatCard({ title, value, icon: Icon, gradientFrom, gradientTo, textColor, unit }) {
+  return (
+    <div className={`flex flex-col items-center justify-center p-4 sm:p-6 lg:p-8 bg-gradient-to-br ${gradientFrom} ${gradientTo} rounded-lg sm:rounded-xl hover:shadow-lg transition-all duration-200 hover:scale-[1.02] group`}>
+      <Icon className={`w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 mb-2 sm:mb-3 ${textColor}`} strokeWidth={1.5} />
+      <span className="text-xs sm:text-sm lg:text-base font-medium text-muted-foreground text-center">{title}</span>
+      <span className={`text-xl sm:text-2xl lg:text-3xl font-bold ${textColor} mt-1`}>{value}</span>
+      {unit && <span className="text-xs sm:text-sm font-medium text-muted-foreground mt-1">{unit}</span>}
     </div>
   )
 }

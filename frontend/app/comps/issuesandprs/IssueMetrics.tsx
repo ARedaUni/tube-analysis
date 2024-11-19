@@ -12,7 +12,9 @@ import {
 } from 'chart.js'
 import { Card } from "@/components/ui/card"
 import { formatDuration, calculatePercentage } from "@/lib/utils"
-import { AlertCircle, CheckCircle, Clock, TrendingUp } from "lucide-react"
+import { AlertCircle, CheckCircle, Clock, TrendingUp, Users } from "lucide-react"
+import { fetchRepositoryMetrics } from "@/services/api"
+import { useQuery } from "@tanstack/react-query"
 
 ChartJS.register(
   CategoryScale,
@@ -25,6 +27,12 @@ ChartJS.register(
 
 export function IssueMetrics() {
   const { repository } = useRepository()
+
+  const { data: metric = {}, isLoading, error } = useQuery({
+    queryKey: ['metrics', repository?.id],
+    queryFn: () => fetchRepositoryMetrics(repository?.id),
+    enabled: !!repository?.id,
+  })
 
   const issueAgeData = {
     labels: ['<1 day', '1-7 days', '1-4 weeks', '>1 month'],
@@ -73,7 +81,7 @@ export function IssueMetrics() {
     },
     {
       title: "Avg Resolution Time",
-      value: formatDuration(repository.avg_issue_close_time),
+      value: `${Math.round(parseFloat(repository.avg_issue_close_time?.split(' ')[0]))}h`,
       icon: Clock,
       color: "text-blue-500"
     },
@@ -83,7 +91,20 @@ export function IssueMetrics() {
         repository.closed_issues_count + repository.open_issues_count)}%`,
       icon: TrendingUp,
       color: "text-purple-500"
-    }
+    },
+    {
+      title: "Active Reviewers",
+      value: metric.reviews?.active_reviewers_count || 0,
+      icon: Users,
+      color: "text-red-500",
+      bgColor: "text-red-500"
+    }, {
+      title: "Avg Review Time",
+      value: formatDuration(metric.reviews?.avg_review_time || 0),
+      icon: Clock,
+      color: "text-pink-500",
+      bgColor: "text-pink-500"
+    },
   ]
 
   return (

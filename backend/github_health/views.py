@@ -4,7 +4,7 @@ from rest_framework.decorators import action
 from django.db.models import Avg, Count, F
 from django.utils import timezone
 from datetime import timedelta
-from .models import Repository, Contributor, Issue, PullRequest, Comment
+from .models import Repository, Contributor, Issue, PullRequest, Comment, RepositoryContributor
 from .serializers import (
     RepositoryLightSerializer, RepositorySerializer, ContributorSerializer, IssueSerializer,
     PullRequestSerializer, CommentSerializer
@@ -14,6 +14,8 @@ from django_filters.rest_framework import DjangoFilterBackend
 
 from rest_framework.views import APIView
 from rest_framework.response import Response
+from django.utils.timezone import now
+
 
 class RepositoryStatsView(APIView):
     def get(self, request, repository_id):
@@ -179,9 +181,62 @@ class CommentListView(generics.ListAPIView):
         repository_id = self.kwargs['repository_id']
         return Comment.objects.filter(repository__id=repository_id)
 
+
+
+
 class RepositoryMetricsView(APIView):
     def get(self, request, repository_id):
         repo = Repository.objects.get(id=repository_id)
+
+        # Fork Growth Rate (Dynamic)
+        fork_growth_rate = (repo.forks / ((now() - repo.created_at).days or 1)) * 30
+
+        # Contributor Growth Rate (Dynamic)
+        last_month_contributors = RepositoryContributor.objects.filter(
+            repository=repo,
+            created_at__gte=now() - timedelta(days=30)
+        ).count()
+        total_contributors = repo.contributors.count()
+        contributor_growth_rate = (last_month_contributors / (total_contributors or 1)) * 100
+
+        # Dependencies (Dynamic Placeholder or Pre-calculated)
+        dependencies = {
+            'status': 'Not Available',
+            'details': 'Dependencies need to be extracted during data processing.'
+        }
+
+        # Review Metrics
+        total_reviewed_prs = PullRequest.objects.filter(
+            repository=repo,
+            state='closed',
+            response_time__isnull=False  # Only consider PRs with reviews
+        ).count()
+
+        approved_prs = PullRequest.objects.filter(
+            repository=repo,
+            state='closed',
+            merged=True
+        ).count()
+
+        change_requested_prs = PullRequest.objects.filter(
+            repository=repo,
+            state='closed',
+            merged=False
+        ).count()
+
+        approval_rate = (approved_prs / total_reviewed_prs) * 100 if total_reviewed_prs else 0
+        change_request_rate = (change_requested_prs / total_reviewed_prs) * 100 if total_reviewed_prs else 0
+
+        avg_review_time = PullRequest.objects.filter(repository=repo).aggregate(
+            Avg('response_time')
+        )['response_time__avg'] or timedelta(0)
+
+        active_reviewers_count = Contributor.objects.filter(
+            repositorycontributor__repository=repo,
+            repositorycontributor__created_at__gte=now() - timedelta(days=30)
+        ).distinct().count()
+
+        # Existing metrics
         metrics = {
             'activity': {
                 'commit_frequency': repo.commit_frequency,
@@ -196,18 +251,25 @@ class RepositoryMetricsView(APIView):
             },
             'code_quality': {
                 'languages': repo.languages,
-                'dependencies': repo.dependencies
+                'dependencies': dependencies  # Dynamically calculated
             },
             'performance': {
                 'issue_resolution_rate': repo.issue_resolution_rate,
                 'pr_merge_rate': repo.pr_merge_rate,
                 'median_issue_response_time': repo.median_issue_response_time,
-                'median_pr_response_time': repo.median_pr_response_time
+                'median_pr_response_time': repo.median_pr_response_time,
             },
             'growth': {
                 'star_growth_rate': repo.star_growth_rate,
-                'fork_growth_rate': repo.fork_growth_rate,
-                'contributor_growth_rate': repo.contributor_growth_rate
+                'fork_growth_rate': fork_growth_rate,  # Dynamically calculated
+                'contributor_growth_rate': contributor_growth_rate,  # Dynamically calculated
+            },
+            'reviews': {
+                'approval_rate': f"{approval_rate:.2f}%",
+                'change_request_rate': f"{change_request_rate:.2f}%",
+                'avg_review_time': avg_review_time,
+                'active_reviewers_count': active_reviewers_count
             }
         }
+
         return Response(metrics)
