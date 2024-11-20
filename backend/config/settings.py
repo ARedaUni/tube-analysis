@@ -25,9 +25,13 @@ ALLOWED_HOSTS = []
 
 # config/settings.py
 
-CELERY_BROKER_URL = REDIS_URL # Use 'redis://localhost:6379/0' if not using Docker
-CELERY_RESULT_BACKEND = REDIS_URL
-CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
+CELERY_BROKER_URL = os.getenv('REDIS_URL')  # Use the same Redis URL as your cache
+CELERY_RESULT_BACKEND = os.getenv('REDIS_URL')  # Store results in Redis
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = 'UTC'
+
 
 
 # Application definition
@@ -50,6 +54,22 @@ INSTALLED_APPS = [
 #     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
 #     'PAGE_SIZE': 10,
 # }
+
+CACHES = {
+    'default': {
+        'BACKEND': 'django_redis.cache.RedisCache',
+        'LOCATION': os.getenv('REDIS_URL'),
+        'OPTIONS': {
+            'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+        },
+        'TIMEOUT': 300,  # Default timeout for cached items in seconds
+    }
+}
+
+# Use Redis as the session backend (optional)
+SESSION_ENGINE = 'django.contrib.sessions.backends.cache'
+SESSION_CACHE_ALIAS = 'default'
+
 
 
 MIDDLEWARE = [
@@ -88,10 +108,7 @@ WSGI_APPLICATION = 'config.wsgi.application'
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
 DATABASES = {
-    'default': dj_database_url.config(
-        conn_max_age=600,  # Optional: Connection pooling
-        ssl_require=True  # Optional: Enforce SSL connection
-    )
+    'default': dj_database_url.config(default=os.getenv('DATABASE_URL'))
 }
 
 

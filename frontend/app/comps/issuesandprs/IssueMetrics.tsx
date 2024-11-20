@@ -13,7 +13,7 @@ import {
 import { Card } from "@/components/ui/card"
 import { formatDuration, calculatePercentage } from "@/lib/utils"
 import { AlertCircle, CheckCircle, Clock, TrendingUp, Users } from "lucide-react"
-import { fetchRepositoryMetrics } from "@/services/api"
+import { fetchHealthAndQuality, fetchRepositoryMetrics } from "@/services/api"
 import { useQuery } from "@tanstack/react-query"
 
 ChartJS.register(
@@ -34,20 +34,31 @@ export function IssueMetrics() {
     enabled: !!repository?.id,
   })
 
+  const { data: health_metrics = {} } = useQuery({
+    queryKey: ['health-metrics', repository?.id],
+    queryFn: () => fetchHealthAndQuality(repository?.id),
+    enabled: !!repository?.id,
+  })
+  
+
+  health_metrics && console.log(health_metrics)
+
   const issueAgeData = {
     labels: ['<1 day', '1-7 days', '1-4 weeks', '>1 month'],
-    datasets: [{
-      label: 'Open Issues by Age',
-      data: repository.issue_age_distribution || [0, 0, 0, 0],
-      backgroundColor: [
-        'rgba(75, 192, 192, 0.8)',
-        'rgba(54, 162, 235, 0.8)',
-        'rgba(255, 206, 86, 0.8)',
-        'rgba(255, 99, 132, 0.8)',
-      ],
-    }]
-  }
-
+    datasets: [
+      {
+        label: 'Open Issues by Age',
+        data: Object.values(health_metrics?.issue_age_distribution || {}),
+        backgroundColor: [
+          'rgba(75, 192, 192, 0.8)',
+          'rgba(54, 162, 235, 0.8)',
+          'rgba(255, 206, 86, 0.8)',
+          'rgba(255, 99, 132, 0.8)',
+        ],
+      },
+    ],
+  };
+  
   const options = {
     responsive: true,
     plugins: {
@@ -122,9 +133,19 @@ export function IssueMetrics() {
       </div>
 
       <div>
-        <h3 className="text-sm font-medium mb-3">Issue Age Distribution</h3>
-        <Bar data={issueAgeData} options={options} />
-      </div>
+  <h3 className="text-sm font-medium mb-3">Issue Age Distribution</h3>
+  {isLoading ? (
+    <div className="relative h-[400px] w-full bg-gray-100 rounded-lg">
+      {/* Skeleton bars */}
+      <div className="absolute bottom-0 left-[10%] w-[10%] h-[50%] bg-gray-300 rounded"></div>
+      <div className="absolute bottom-0 left-[30%] w-[10%] h-[70%] bg-gray-400 rounded"></div>
+      <div className="absolute bottom-0 left-[50%] w-[10%] h-[60%] bg-gray-300 rounded"></div>
+      <div className="absolute bottom-0 left-[70%] w-[10%] h-[80%] bg-gray-400 rounded"></div>
+    </div>
+  ) : (
+    <Bar data={issueAgeData} options={options} />
+  )}
+</div>
     </div>
   )
 }

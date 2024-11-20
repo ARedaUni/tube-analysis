@@ -2,10 +2,11 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { useTheme } from 'next-themes'
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { Activity, BarChart, Code, GitBranch, GitPullRequest, Home, Users } from 'lucide-react'
+import { BarChart, GitBranch, Home, Users, Sun, Moon } from 'lucide-react'
 
 const sidebarNavItems = [
   {
@@ -24,29 +25,40 @@ const sidebarNavItems = [
     icon: GitBranch,
   },
   {
-    title: 'Community',
-    href: '/community-health',
+    title: "Community",
+    href: "/community-health",
     icon: Users,
-  },
-  {
-    title: 'Performance',
-    href: '/performance',
-    icon: Activity,
   },
 ]
 
 export function Sidebar() {
   const pathname = usePathname()
+  const { theme, setTheme } = useTheme()
 
   return (
     <div className="hidden border-r bg-gray-100/40 lg:block dark:bg-gray-800/40">
       <div className="flex h-full max-h-screen flex-col gap-2">
-        <div className="flex h-[60px] items-center border-b px-6">
+        {/* Header */}
+        <div className="flex h-[60px] items-center justify-between border-b px-6">
           <Link className="flex items-center gap-2 font-semibold" href="/">
             <BarChart className="h-6 w-6" />
             <span>Repo Analytics</span>
           </Link>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+            aria-label="Toggle theme"
+          >
+            {theme === "dark" ? (
+              <Sun className="h-5 w-5 text-yellow-500" />
+            ) : (
+              <Moon className="h-5 w-5 text-gray-800" />
+            )}
+          </Button>
         </div>
+
+        {/* Navigation */}
         <ScrollArea className="flex-1 overflow-auto py-2">
           <nav className="grid items-start px-4 text-sm font-medium">
             {sidebarNavItems.map((item, index) => (

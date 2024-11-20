@@ -7,6 +7,7 @@ import { PRMetrics } from "../comps/issuesandprs/PRMetrics"
 import { TimelineView } from "../comps/issuesandprs/TimelineView"
 import { LabelAnalysis } from "../comps/issuesandprs/LabelAnalysis"
 import { ReviewAnalytics } from "../comps/issuesandprs/ReviewAnalytics"
+import RepositorySelector from "../comps/RepositorySelector"
 
 export default function IssuesPRsPage() {
   const { repository, isLoading, error } = useRepository()
@@ -19,6 +20,9 @@ export default function IssuesPRsPage() {
     <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
       <div className="flex items-center justify-between space-y-2">
         <h2 className="text-3xl font-bold tracking-tight">Issues & Pull Requests</h2>
+        <div className="flex items-center space-x-2">
+          <RepositorySelector />
+        </div>
       </div>
       <div className="grid gap-4 md:grid-cols-2">
         <Card className="col-span-2">

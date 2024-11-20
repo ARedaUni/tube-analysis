@@ -186,6 +186,23 @@ class RepositoryHealthAndQualityView(APIView):
         try:
             repo = Repository.objects.get(id=repository_id)
 
+            now_date = now()
+            issue_age_distribution = {
+                "<1 day": Issue.objects.filter(
+                    repository=repo, state="open", created_at__gte=now_date - timedelta(days=1)
+                ).count(),
+                "1-7 days": Issue.objects.filter(
+                    repository=repo, state="open", created_at__gte=now_date - timedelta(days=7),
+                    created_at__lt=now_date - timedelta(days=1),
+                ).count(),
+                "1-4 weeks": Issue.objects.filter(
+                    repository=repo, state="open", created_at__gte=now_date - timedelta(weeks=4),
+                    created_at__lt=now_date - timedelta(days=7),
+                ).count(),
+                ">1 month": Issue.objects.filter(
+                    repository=repo, state="open", created_at__lt=now_date - timedelta(weeks=4)
+                ).count(),
+            }
             # Community Health
             community_health = {
                 "contributing_guidelines": repo.contributing_guidelines,
@@ -271,6 +288,7 @@ class RepositoryHealthAndQualityView(APIView):
                 "pr_data": pr_data,
                 "growth_metrics": growth_metrics,
                 "contributors": contributors,
+                "issue_age_distribution": issue_age_distribution,
             })
         except Repository.DoesNotExist:
             return Response({"error": "Repository not found."}, status=404)
