@@ -24,11 +24,6 @@ const sidebarNavItems = [
     icon: GitBranch,
   },
   {
-    title: 'Code Analytics',
-    href: '/code-analytics',
-    icon: Code,
-  },
-  {
     title: 'Community',
     href: '/community-health',
     icon: Users,

@@ -38,6 +38,10 @@ export const fetchRepositoryMetrics = (repositoryId: number) =>
 export const fetchTimelineView = (repositoryId: number) => 
   fetchFromAPI(`/repositories/${repositoryId}/timeline`)
 
+export const fetchHealthAndQuality = (repositoryId: number) =>
+  fetchFromAPI(`/repositories/${repositoryId}/health-and-quality/`);
+
+
 // export const fetchCodeAnalytics = (repositoryId: number) =>
 //   fetchFromAPI(`/repositories/${repositoryId}/code-analytics/`)
 

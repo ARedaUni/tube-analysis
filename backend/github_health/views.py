@@ -181,13 +181,111 @@ class CommentListView(generics.ListAPIView):
         repository_id = self.kwargs['repository_id']
         return Comment.objects.filter(repository__id=repository_id)
 
+class RepositoryHealthAndQualityView(APIView):
+    def get(self, request, repository_id):
+        try:
+            repo = Repository.objects.get(id=repository_id)
+
+            # Community Health
+            community_health = {
+                "contributing_guidelines": repo.contributing_guidelines,
+                "code_of_conduct": repo.code_of_conduct,
+                "issue_template": repo.issue_template,
+                "pr_template": repo.pr_template,
+            }
+
+            # Activity Timeline
+            end_date = now()
+            start_date = end_date - timedelta(days=30)
+            timeline_data = {
+                "dates": [],
+                "issues_opened": [],
+                "issues_closed": [],
+                "prs_opened": [],
+                "prs_merged": [],
+            }
+
+            current_date = start_date
+            while current_date <= end_date:
+                timeline_data["dates"].append(current_date.date())
+                timeline_data["issues_opened"].append(
+                    Issue.objects.filter(
+                        repository=repo, created_at__date=current_date.date()
+                    ).count()
+                )
+                timeline_data["issues_closed"].append(
+                    Issue.objects.filter(
+                        repository=repo, closed_at__date=current_date.date()
+                    ).count()
+                )
+                timeline_data["prs_opened"].append(
+                    PullRequest.objects.filter(
+                        repository=repo, created_at__date=current_date.date()
+                    ).count()
+                )
+                timeline_data["prs_merged"].append(
+                    PullRequest.objects.filter(
+                        repository=repo, merged=True, merged_at__date=current_date.date()
+                    ).count()
+                )
+                current_date += timedelta(days=1)
+
+            # Issue and PR Analytics
+            issue_data = {
+                "open_issues": Issue.objects.filter(repository=repo, state="open").count(),
+                "closed_issues": Issue.objects.filter(repository=repo, state="closed").count(),
+                "avg_close_time": repo.avg_issue_close_time.total_seconds()
+                if repo.avg_issue_close_time
+                else 0,
+            }
+            pr_data = {
+                "merge_rate": repo.pr_merge_rate,
+                "avg_merge_time": repo.avg_pr_merge_time.total_seconds()
+                if repo.avg_pr_merge_time
+                else 0,
+                "open_prs": PullRequest.objects.filter(repository=repo, state="open").count(),
+                "merged_prs": PullRequest.objects.filter(repository=repo, merged=True).count(),
+                "closed_prs": PullRequest.objects.filter(repository=repo, state="closed", merged=False).count(),
+            }
+
+            # Growth Metrics
+            growth_metrics = {
+                "star_growth_rate": repo.star_growth_rate,
+                # "fork_growth_rate": repo.fork_growth_rate,
+                # "contributor_growth_rate": repo.contributor_growth_rate,
+            }
+
+            # Contributor Insights
+            top_contributors = RepositoryContributor.objects.filter(
+                repository=repo
+            ).order_by("-contributions")[:5]
+            contributors = [
+                {"name": contrib.contributor.username, "contributions": contrib.contributions}
+                for contrib in top_contributors
+            ]
+
+            return Response({
+                "community_health": community_health,
+                "timeline_data": timeline_data,
+                "issue_data": issue_data,
+                "pr_data": pr_data,
+                "growth_metrics": growth_metrics,
+                "contributors": contributors,
+            })
+        except Repository.DoesNotExist:
+            return Response({"error": "Repository not found."}, status=404)
 
 
 
 class RepositoryMetricsView(APIView):
     def get(self, request, repository_id):
         repo = Repository.objects.get(id=repository_id)
-
+        activity = {
+                    'dates': [],  # Populate with dates
+                    'commit_counts': [],  # Populate with commit counts
+                    'issues_opened': [],  # Populate with issues opened
+                    # Add more as needed
+                }
         # Fork Growth Rate (Dynamic)
         fork_growth_rate = (repo.forks / ((now() - repo.created_at).days or 1)) * 30
 

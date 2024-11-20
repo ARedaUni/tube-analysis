@@ -1,6 +1,7 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from .views import (
+    RepositoryHealthAndQualityView,
     RepositoryViewSet,
     RepositoryStatsView,
     ContributorListView,
@@ -28,4 +29,5 @@ urlpatterns = [
     path('repositories/<int:repository_id>/metrics/', RepositoryMetricsView.as_view(), name='repository-metrics'),
     path('repositories/<int:repository_id>/timeline/', ActivityTimelineView.as_view(), name='repository-timeline'),
     path('repositories/compare/', RepositoryComparisonView.as_view(), name='repository-compare'),
+       path('repositories/<int:repository_id>/health-and-quality/', RepositoryHealthAndQualityView.as_view(), name='repository-health-quality'),
 ]

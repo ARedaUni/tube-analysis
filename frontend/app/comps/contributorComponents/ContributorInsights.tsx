@@ -80,7 +80,7 @@ export default function ContributorInsights() {
                   }}
                   formatter={(value, name) => [`${value} contributions`, name]}
                 />
-                <Bar dataKey="value" fill="hsl(var(--blue-600))" />
+                <Bar dataKey="value" fill="hsl(var(--primary))" />
               </BarChart>
             </ResponsiveContainer>
           </div>
