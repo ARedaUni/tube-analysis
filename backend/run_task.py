@@ -8,14 +8,13 @@ from github import GithubException, Github
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
 django.setup()
 
-from github_health.tasks import fetch_repository_data
+from github_health.tasks import fetch_pull_requests_data, fetch_repository_data
 
 # List of repositories to fetch data for
 repositories = [
     # "faker-js/faker",
-    # "django/django",
+     "django/django",
     # "vuejs/vue",
-    "reactjs/reactjs.org"
     
 ]
 

@@ -9,6 +9,7 @@
 // import { useRepository } from '@/hooks/useRepository'
 // import { Button } from '@/components/ui/button'
 // import { ChevronLeft, ChevronRight } from 'lucide-react'
+// import { Skeleton } from "@/components/ui/skeleton"
 
 // export default function ContributorInsights() {
 //   const { repository } = useRepository()
@@ -33,113 +34,143 @@
 //     value: contributor.total_contributions,
 //   }))
 
-//   if (isLoading) {
-//     return <div className="flex justify-center items-center h-64">Loading contributors...</div>
-//   }
-
 //   if (error) {
 //     return <div className="text-red-500 text-center">Error loading contributors.</div>
 //   }
 
-//   return (
+//   const SkeletonLayout = () => (
 //     <div className="space-y-6 p-4">
-//       {/* Chart */}
 //       <Card className="overflow-hidden">
 //         <CardHeader className="p-4">
-//           <CardTitle className="text-lg sm:text-xl lg:text-2xl">Contributions Chart</CardTitle>
+//           <Skeleton className="h-8 w-3/4" />
 //         </CardHeader>
 //         <CardContent className="p-2 sm:p-4">
-//           <div className="h-[300px] sm:h-[400px]">
-//             <ResponsiveContainer width="100%" height="100%">
-//               <BarChart
-//                 data={chartData}
-//                 margin={{
-//                   top: 5,
-//                   right: 20,
-//                   bottom: 5,
-//                   left: 40,
-//                 }}
-//               >
-//                 <YAxis
-//                   tick={{
-//                     fontSize: 12,
-//                     fill: 'hsl(var(--foreground))',
-//                   }}
-//                   label={{
-//                     value: 'Total Contributions',
-//                     angle: -90,
-//                     position: 'insideLeft',
-//                     style: { textAnchor: 'middle' },
-//                   }}
-//                 />
-//                 <Tooltip
-//                   contentStyle={{
-//                     backgroundColor: 'hsl(var(--background))',
-//                     border: '1px solid hsl(var(--border))',
-//                     borderRadius: '4px',
-//                   }}
-//                   formatter={(value, name) => [`${value} contributions`, name]}
-//                 />
-//                 <Bar dataKey="value" fill="hsl(var(--primary))" />
-//               </BarChart>
-//             </ResponsiveContainer>
-//           </div>
+//           <Skeleton className="h-[300px] sm:h-[400px] w-full" />
 //         </CardContent>
 //       </Card>
 
-//       {/* Table */}
 //       <Card>
 //         <CardContent className="p-4">
-//           <Table>
-//             <TableHeader>
-//               <TableRow>
-//                 <TableHead className="w-1/2">Username</TableHead>
-//                 <TableHead className="w-1/2 text-right">Total Contributions</TableHead>
-//               </TableRow>
-//             </TableHeader>
-//             <TableBody>
-//               {currentContributors.map((contributor: any) => (
-//                 <TableRow 
-//                   key={contributor.id}
-//                   className={contributor.username === selectedContributor ? 'bg-blue-100 dark:bg-blue-900' : ''}
-//                 >
-//                   <TableCell className="font-medium">{contributor.username}</TableCell>
-//                   <TableCell className="text-right">{contributor.total_contributions}</TableCell>
-//                 </TableRow>
-//               ))}
-//             </TableBody>
-//           </Table>
+//           <Skeleton className="h-8 w-full mb-4" />
+//           {[...Array(5)].map((_, index) => (
+//             <Skeleton key={index} className="h-12 w-full mb-2" />
+//           ))}
 //         </CardContent>
 //       </Card>
 
-//       {/* Pagination */}
 //       <div className="flex justify-between items-center">
-//         <Button
-//           variant="outline"
-//           size="sm"
-//           onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-//           disabled={currentPage === 1}
-//         >
-//           <ChevronLeft className="h-4 w-4 mr-2" />
-//           Previous
-//         </Button>
-//         <span className="text-sm text-muted-foreground">
-//           Page {currentPage} of {totalPages}
-//         </span>
-//         <Button
-//           variant="outline"
-//           size="sm"
-//           onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
-//           disabled={currentPage === totalPages}
-//         >
-//           Next
-//           <ChevronRight className="h-4 w-4 ml-2" />
-//         </Button>
+//         <Skeleton className="h-10 w-24" />
+//         <Skeleton className="h-6 w-32" />
+//         <Skeleton className="h-10 w-24" />
 //       </div>
 //     </div>
 //   )
-// }
 
+//   return (
+//     <>
+//       {isLoading ? (
+//         <SkeletonLayout />
+//       ) : (
+//         <div className="space-y-6 p-4">
+//           {/* Chart */}
+//           <Card className="overflow-hidden">
+//             <CardHeader className="p-4">
+//               <CardTitle className="text-lg sm:text-xl lg:text-2xl">Contributions Chart</CardTitle>
+//             </CardHeader>
+//             <CardContent className="p-2 sm:p-4">
+//               <div className="h-[300px] sm:h-[400px]">
+//                 <ResponsiveContainer width="100%" height="100%">
+//                   <BarChart
+//                     data={chartData}
+//                     margin={{
+//                       top: 5,
+//                       right: 20,
+//                       bottom: 5,
+//                       left: 40,
+//                     }}
+//                   >
+//                     <YAxis
+//                       tick={{
+//                         fontSize: 12,
+//                         fill: '#333',
+//                       }}
+//                       label={{
+//                         value: 'Total Contributions',
+//                         angle: -90,
+//                         position: 'insideLeft',
+//                         style: { textAnchor: 'middle', fill: '#555' },
+//                       }}
+//                     />
+//                     <Tooltip
+//                       contentStyle={{
+//                         backgroundColor: '#fff',
+//                         border: '1px solid #ccc',
+//                         borderRadius: '4px',
+//                       }}
+//                       formatter={(value, name) => [`${value} contributions`, name]}
+//                     />
+//                     <Bar dataKey="value" fill="#007BFF" />
+//                   </BarChart>
+//                 </ResponsiveContainer>
+//               </div>
+//             </CardContent>
+//           </Card>
+
+//           {/* Table */}
+//           <Card>
+//             <CardContent className="p-4">
+//               <Table>
+//                 <TableHeader>
+//                   <TableRow>
+//                     <TableHead className="w-1/2">Username</TableHead>
+//                     <TableHead className="w-1/2 text-right">Total Contributions</TableHead>
+//                   </TableRow>
+//                 </TableHeader>
+//                 <TableBody>
+//                   {currentContributors.map((contributor: any) => (
+//                     <TableRow 
+//                       key={contributor.id}
+//                       className={contributor.username === selectedContributor ? 'bg-blue-100' : 'bg-white'}
+//                       onClick={() => setSelectedContributor(contributor.username)}
+//                     >
+//                       <TableCell className="font-medium">{contributor.username}</TableCell>
+//                       <TableCell className="text-right">{contributor.total_contributions}</TableCell>
+//                     </TableRow>
+//                   ))}
+//                 </TableBody>
+//               </Table>
+//             </CardContent>
+//           </Card>
+
+//           {/* Pagination */}
+//           <div className="flex justify-between items-center">
+//             <Button
+//               variant="outline"
+//               size="sm"
+//               onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+//               disabled={currentPage === 1}
+//             >
+//               <ChevronLeft className="h-4 w-4 mr-2" />
+//               Previous
+//             </Button>
+//             <span className="text-sm text-gray-600">
+//               Page {currentPage} of {totalPages}
+//             </span>
+//             <Button
+//               variant="outline"
+//               size="sm"
+//               onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+//               disabled={currentPage === totalPages}
+//             >
+//               Next
+//               <ChevronRight className="h-4 w-4 ml-2" />
+//             </Button>
+//           </div>
+//         </div>
+//       )}
+//     </>
+//   )
+// }
 
 'use client'
 
@@ -152,6 +183,8 @@ import { fetchContributors } from '@/services/api'
 import { useRepository } from '@/hooks/useRepository'
 import { Button } from '@/components/ui/button'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { Skeleton } from "@/components/ui/skeleton"
+import LoadingSpinner  from "@/app/comps/LoadingSpinner"
 
 export default function ContributorInsights() {
   const { repository } = useRepository()
@@ -176,110 +209,144 @@ export default function ContributorInsights() {
     value: contributor.total_contributions,
   }))
 
-  if (isLoading) {
-    return <div className="flex justify-center items-center h-64">Loading contributors...</div>
-  }
-
   if (error) {
     return <div className="text-red-500 text-center">Error loading contributors.</div>
   }
 
-  return (
+  const SkeletonLayout = () => (
     <div className="space-y-6 p-4">
-      {/* Chart */}
       <Card className="overflow-hidden">
         <CardHeader className="p-4">
-          <CardTitle className="text-lg sm:text-xl lg:text-2xl">Contributions Chart</CardTitle>
+          <Skeleton className="h-8 w-3/4" />
         </CardHeader>
         <CardContent className="p-2 sm:p-4">
-          <div className="h-[300px] sm:h-[400px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart
-                data={chartData}
-                margin={{
-                  top: 5,
-                  right: 20,
-                  bottom: 5,
-                  left: 40,
-                }}
-              >
-                <YAxis
-                  tick={{
-                    fontSize: 12,
-                    fill: '#333', // Hardcoded text color
-                  }}
-                  label={{
-                    value: 'Total Contributions',
-                    angle: -90,
-                    position: 'insideLeft',
-                    style: { textAnchor: 'middle', fill: '#555' }, // Hardcoded label color
-                  }}
-                />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: '#fff', // Hardcoded tooltip background
-                    border: '1px solid #ccc', // Hardcoded border
-                    borderRadius: '4px',
-                  }}
-                  formatter={(value, name) => [`${value} contributions`, name]}
-                />
-                <Bar dataKey="value" fill="#007BFF" /> {/* Hardcoded bar color */}
-              </BarChart>
-            </ResponsiveContainer>
+          <div className="h-[300px] sm:h-[400px] w-full relative">
+            <Skeleton className="h-full w-full" />
+            <LoadingSpinner  />
           </div>
         </CardContent>
       </Card>
 
-      {/* Table */}
       <Card>
         <CardContent className="p-4">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-1/2">Username</TableHead>
-                <TableHead className="w-1/2 text-right">Total Contributions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {currentContributors.map((contributor: any) => (
-                <TableRow 
-                  key={contributor.id}
-                  className={contributor.username === selectedContributor ? 'bg-blue-100' : 'bg-white'} // Hardcoded row color
-                  onClick={() => setSelectedContributor(contributor.username)}
-                >
-                  <TableCell className="font-medium">{contributor.username}</TableCell>
-                  <TableCell className="text-right">{contributor.total_contributions}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+          <Skeleton className="h-8 w-full mb-4" />
+          {[...Array(5)].map((_, index) => (
+            <Skeleton key={index} className="h-12 w-full mb-2" />
+          ))}
         </CardContent>
       </Card>
 
-      {/* Pagination */}
       <div className="flex justify-between items-center">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-          disabled={currentPage === 1}
-        >
-          <ChevronLeft className="h-4 w-4 mr-2" />
-          Previous
-        </Button>
-        <span className="text-sm text-gray-600"> {/* Hardcoded text color */}
-          Page {currentPage} of {totalPages}
-        </span>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
-          disabled={currentPage === totalPages}
-        >
-          Next
-          <ChevronRight className="h-4 w-4 ml-2" />
-        </Button>
+        <Skeleton className="h-10 w-24" />
+        <Skeleton className="h-6 w-32" />
+        <Skeleton className="h-10 w-24" />
       </div>
     </div>
   )
+
+  return (
+    <>
+      {isLoading ? (
+        <SkeletonLayout />
+      ) : (
+        <div className="space-y-6 p-4">
+          {/* Chart */}
+          <Card className="overflow-hidden">
+            <CardHeader className="p-4">
+              <CardTitle className="text-lg sm:text-xl lg:text-2xl">Contributions Chart</CardTitle>
+            </CardHeader>
+            <CardContent className="p-2 sm:p-4">
+              <div className="h-[300px] sm:h-[400px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart
+                    data={chartData}
+                    margin={{
+                      top: 5,
+                      right: 20,
+                      bottom: 5,
+                      left: 40,
+                    }}
+                  >
+                    <YAxis
+                      tick={{
+                        fontSize: 12,
+                        fill: '#333',
+                      }}
+                      label={{
+                        value: 'Total Contributions',
+                        angle: -90,
+                        position: 'insideLeft',
+                        style: { textAnchor: 'middle', fill: '#555' },
+                      }}
+                    />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: '#fff',
+                        border: '1px solid #ccc',
+                        borderRadius: '4px',
+                      }}
+                      formatter={(value, name) => [`${value} contributions`, name]}
+                    />
+                    <Bar dataKey="value" fill="#007BFF" />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Table */}
+          <Card>
+            <CardContent className="p-4">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-1/2">Username</TableHead>
+                    <TableHead className="w-1/2 text-right">Total Contributions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {currentContributors.map((contributor: any) => (
+                    <TableRow 
+                      key={contributor.id}
+                      className={contributor.username === selectedContributor ? 'bg-blue-100' : 'bg-white'}
+                      onClick={() => setSelectedContributor(contributor.username)}
+                    >
+                      <TableCell className="font-medium">{contributor.username}</TableCell>
+                      <TableCell className="text-right">{contributor.total_contributions}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+
+          {/* Pagination */}
+          <div className="flex justify-between items-center">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+              disabled={currentPage === 1}
+            >
+              <ChevronLeft className="h-4 w-4 mr-2" />
+              Previous
+            </Button>
+            <span className="text-sm text-gray-600">
+              Page {currentPage} of {totalPages}
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+              disabled={currentPage === totalPages}
+            >
+              Next
+              <ChevronRight className="h-4 w-4 ml-2" />
+            </Button>
+          </div>
+        </div>
+      )}
+    </>
+  )
 }
+

@@ -134,7 +134,7 @@ export function IssueMetrics() {
 
       <div>
   <h3 className="text-sm font-medium mb-3">Issue Age Distribution</h3>
-  {isLoading ? (
+  {!issueAgeData ? (
     <div className="relative h-[400px] w-full bg-gray-100 rounded-lg">
       {/* Skeleton bars */}
       <div className="absolute bottom-0 left-[10%] w-[10%] h-[50%] bg-gray-300 rounded"></div>

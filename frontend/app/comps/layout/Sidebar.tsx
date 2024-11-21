@@ -1,12 +1,14 @@
 'use client'
 
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { useTheme } from 'next-themes'
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { BarChart, GitBranch, Home, Users, Sun, Moon } from 'lucide-react'
+import { Separator } from "@/components/ui/separator"
+import { BarChart, GitBranch, Home, Users, Sun, Moon, LogIn, UserPlus, LogOut } from 'lucide-react'
+import { useToast } from "@/hooks/use-toast"
 
 const sidebarNavItems = [
   {
@@ -34,6 +36,20 @@ const sidebarNavItems = [
 export function Sidebar() {
   const pathname = usePathname()
   const { theme, setTheme } = useTheme()
+  const router = useRouter()
+  const { toast } = useToast()
+
+  const isLoggedIn = typeof window !== 'undefined' && !!localStorage.getItem('accessToken')
+
+  const handleLogout = () => {
+    localStorage.removeItem('accessToken')
+    localStorage.removeItem('refreshToken')
+    toast({
+      title: "Logged out",
+      description: "You have been successfully logged out.",
+    })
+    router.push('/login')
+  }
 
   return (
     <div className="hidden border-r bg-gray-100/40 lg:block dark:bg-gray-800/40">
@@ -76,6 +92,28 @@ export function Sidebar() {
             ))}
           </nav>
         </ScrollArea>
+
+        {/* Authentication Section */}
+        <div className="mt-auto px-4 py-4">
+          <Separator className="my-4" />
+          {isLoggedIn ? (
+            <Button variant="outline" className="w-full justify-start" onClick={handleLogout}>
+              <LogOut className="mr-2 h-4 w-4" />
+              Logout
+            </Button>
+          ) : (
+            <>
+              <Button variant="outline" className="w-full justify-start mb-2" onClick={() => router.push('/login')}>
+                <LogIn className="mr-2 h-4 w-4" />
+                Login
+              </Button>
+              <Button variant="outline" className="w-full justify-start" onClick={() => router.push('/register')}>
+                <UserPlus className="mr-2 h-4 w-4" />
+                Register
+              </Button>
+            </>
+          )}
+        </div>
       </div>
     </div>
   )
