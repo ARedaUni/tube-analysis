@@ -26,7 +26,7 @@ const loginSchema = z.object({
 })
 
 async function loginUser(credentials: z.infer<typeof loginSchema>) {
-  const response = await fetch('/auth/login/', {
+  const response = await fetch('http://localhost:8000/auth/login/', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(credentials),
@@ -59,7 +59,7 @@ export default function LoginPage() {
         title: 'Login Successful',
         description: 'You have been successfully logged in.',
       })
-      router.push('/dashboard')
+      router.push('/')
     },
     onError: () => {
       toast({

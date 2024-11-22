@@ -8,7 +8,7 @@ import { Loader2 } from 'lucide-react'
 
 async function logoutUser() {
   const refreshToken = localStorage.getItem('refreshToken')
-  const response = await fetch('/auth/logout/', {
+  const response = await fetch('http://localhost:8000/auth/logout/', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

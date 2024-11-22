@@ -85,9 +85,9 @@ class RepositoryContributor(models.Model):
 class Issue(models.Model):
     repository = models.ForeignKey(Repository, on_delete=models.CASCADE, related_name='issues')
     issue_number = models.IntegerField()
-    title = models.CharField(max_length=255)
+    title = models.CharField(max_length=500)
     body = models.TextField(null=True, blank=True)
-    state = models.CharField(max_length=50)  # e.g., 'open', 'closed'
+    state = models.CharField(max_length=100)  # e.g., 'open', 'closed'
     created_at = models.DateTimeField()
     closed_at = models.DateTimeField(null=True, blank=True)
     response_time = models.DurationField(null=True, blank=True)

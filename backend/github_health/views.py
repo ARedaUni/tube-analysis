@@ -1,9 +1,16 @@
+from celery.result import AsyncResult
+from rest_framework.views import APIView
+from asgiref.sync import async_to_sync
+from channels.layers import get_channel_layer
+from .tasks import fetch_repository_data
 from rest_framework import viewsets, generics, status
 from rest_framework.response import Response
 from rest_framework.decorators import action
 from django.db.models import Avg, Count, F
 from django.utils import timezone
 from datetime import timedelta
+
+from .tasks import fetch_repository_data
 from .models import Repository, Contributor, Issue, PullRequest, Comment, RepositoryContributor
 from .serializers import (
     RepositoryLightSerializer, RepositorySerializer, ContributorSerializer, IssueSerializer,
@@ -15,6 +22,44 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.utils.timezone import now
+
+
+
+class FetchRepositoryView(APIView):
+    """
+    API view to fetch repository data and send updates to the frontend.
+    """
+
+    def post(self, request, *args, **kwargs):
+        repo_name = request.data.get("repo_name")
+        if not repo_name:
+            return Response({"error": "Repository name is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            # Trigger Celery task
+            task = fetch_repository_data.delay(repo_name)
+
+            return Response({"message": "Repository data fetching started.", "task_id": task.id}, status=status.HTTP_202_ACCEPTED)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class TaskStatusView(APIView):
+    """
+    API view to check the status of a Celery task.
+    """
+
+    def get(self, request, task_id, *args, **kwargs):
+        try:
+            task_result = AsyncResult(task_id)
+            status_data = {
+                "task_id": task_id,
+                "status": task_result.status,
+                "result": task_result.result,
+            }
+            return Response(status_data, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 class RepositoryStatsView(APIView):

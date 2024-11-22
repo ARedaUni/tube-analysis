@@ -1,6 +1,7 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from .views import (
+    FetchRepositoryView,
     RepositoryHealthAndQualityView,
     RepositoryViewSet,
     RepositoryStatsView,
@@ -11,6 +12,7 @@ from .views import (
     RepositoryMetricsView,
     ActivityTimelineView,
     RepositoryComparisonView,
+    TaskStatusView,
 )
 
 # Create a router for the RepositoryViewSet
@@ -20,6 +22,10 @@ router.register(r'repositories', RepositoryViewSet, basename='repository')
 urlpatterns = [
     # Include the routes handled by the router
     path('', include(router.urls)),
+
+    #fetching repository endpoints
+    path('fetch-repository/', FetchRepositoryView.as_view(), name='fetch-repository'),
+    path('task-status/<str:task_id>/', TaskStatusView.as_view(), name='task-status'),
 
     # Additional endpoints
     path('repositories/<int:repository_id>/contributors/', ContributorListView.as_view(), name='contributors'),

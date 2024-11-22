@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Separator } from "@/components/ui/separator"
-import { BarChart, GitBranch, Home, Users, Sun, Moon, LogIn, UserPlus, LogOut } from 'lucide-react'
+import { BarChart , Search, GitBranch, Home, Users, Sun, Moon, LogIn, UserPlus, LogOut } from 'lucide-react'
 import { useToast } from "@/hooks/use-toast"
 
 const sidebarNavItems = [
@@ -30,6 +30,11 @@ const sidebarNavItems = [
     title: "Community",
     href: "/community-health",
     icon: Users,
+  },
+  {
+    title: "Repository Grabber",
+    href: "/fetch-repository",
+    icon: Search,
   },
 ]
 

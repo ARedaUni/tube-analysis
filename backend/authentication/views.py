@@ -12,6 +12,15 @@ class RegisterView(generics.CreateAPIView):
     permission_classes = (AllowAny,)
     serializer_class = RegisterSerializer
 
+    def create(self, request, *args, **kwargs):
+        print("Request data:", request.data)  # Log the incoming request data
+        serializer = self.get_serializer(data=request.data)
+        if serializer.is_valid():
+            return super().create(request, *args, **kwargs)
+        else:
+            print("Validation errors:", serializer.errors)  # Log validation errors
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 class LogoutView(APIView):
     permission_classes = (IsAuthenticated,)
 

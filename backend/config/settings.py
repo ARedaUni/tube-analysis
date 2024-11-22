@@ -25,6 +25,15 @@ ALLOWED_HOSTS = []
 
 # config/settings.py
 
+ASGI_APPLICATION = "github_health.asgi.application"
+
+# WebSocket Channel Layer (using in-memory for simplicity)
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels.layers.InMemoryChannelLayer",
+    },
+}
+
 CELERY_BROKER_URL = os.getenv('REDIS_URL')  # Use the same Redis URL as your cache
 CELERY_RESULT_BACKEND = os.getenv('REDIS_URL')  # Store results in Redis
 CELERY_ACCEPT_CONTENT = ['json']
@@ -50,6 +59,7 @@ INSTALLED_APPS = [
     'corsheaders',
     'rest_framework_simplejwt.token_blacklist',
     'authentication',
+    "channels"
 ]
 
 from datetime import timedelta

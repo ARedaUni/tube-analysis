@@ -1,7 +1,7 @@
 import { useQuery, useMutation } from '@tanstack/react-query'
 
 async function refreshToken(refreshToken: string) {
-  const response = await fetch('/auth/login/refresh/', {
+  const response = await fetch('http://localhost:8000/auth/login/refresh/', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ refresh: refreshToken }),

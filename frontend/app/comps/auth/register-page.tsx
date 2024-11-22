@@ -33,7 +33,7 @@ const registerSchema = z.object({
 })
 
 async function registerUser(userData: z.infer<typeof registerSchema>) {
-  const response = await fetch('/auth/register/', {
+  const response = await fetch('http://localhost:8000/auth/register/', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(userData),
