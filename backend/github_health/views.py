@@ -22,7 +22,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.utils.timezone import now
-
+import logging
 
 
 class FetchRepositoryView(APIView):
@@ -44,22 +44,41 @@ class FetchRepositoryView(APIView):
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-class TaskStatusView(APIView):
-    """
-    API view to check the status of a Celery task.
-    """
 
+
+logger = logging.getLogger(__name__)
+
+class TaskStatusView(APIView):
     def get(self, request, task_id, *args, **kwargs):
         try:
             task_result = AsyncResult(task_id)
-            status_data = {
+            response_data = {
                 "task_id": task_id,
                 "status": task_result.status,
                 "result": task_result.result,
+                "meta": task_result.info,
             }
-            return Response(status_data, status=status.HTTP_200_OK)
+
+            # Get subtask statuses
+            meta = task_result.info or {}
+            subtasks_meta = meta.get('subtasks', [])
+            subtasks = []
+            for subtask_info in subtasks_meta:
+                res = AsyncResult(subtask_info['id'])
+                subtasks.append({
+                    'id': res.id,
+                    'name': subtask_info.get('name'),
+                    'status': res.status,
+                    'result': res.result,
+                    'info': res.info,
+                })
+            response_data['subtasks'] = subtasks
+
+            return Response(response_data, status=status.HTTP_200_OK)
         except Exception as e:
+            logger.error(f"Error fetching task status: {e}")
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
 
 
 class RepositoryStatsView(APIView):

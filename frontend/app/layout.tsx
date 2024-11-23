@@ -10,13 +10,9 @@ const inter = Inter({ subsets: ['latin'] })
 
 
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+  const [queryClient] = useState(() => new QueryClient());
 
-  const [queryClient] = useState(() => new QueryClient())
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
@@ -25,19 +21,17 @@ export default function RootLayout({
           defaultTheme="system"
           enableSystem
           disableTransitionOnChange
+          forcedTheme="system" // Ensures consistency
         >
-       
           <div className="flex h-screen overflow-hidden">
             <Sidebar />
             <main className="flex-1 overflow-y-auto bg-background">
-            <QueryClientProvider client={queryClient}>
-              {children}
-              </QueryClientProvider>
+              <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
             </main>
           </div>
           <Toaster />
         </ThemeProvider>
       </body>
     </html>
-  )
+  );
 }

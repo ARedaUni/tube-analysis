@@ -1,4 +1,3 @@
-
 from pathlib import Path
 
 import dj_database_url
@@ -21,28 +20,23 @@ SECRET_KEY = 'django-insecure-qmiptpr@a&6gnj6$jdza2*b9(q6ab4w$312s_1po1kass6(ai9
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['localhost', '127.0.0.1']
 
 # config/settings.py
 
-ASGI_APPLICATION = "config.asgi.application"
+ASGI_APPLICATION = "config.asgi"
 
 # WebSocket Channel Layer (using in-memory for simplicity)
 CHANNEL_LAYERS = {
     "default": {
         "BACKEND": "channels_redis.core.RedisChannelLayer",
         "CONFIG": {
-            "hosts": [os.getenv("REDIS_URL")],  # Your Redis URL from Render
-            "capacity": 1000,                  # Maximum messages to hold in memory
-            "expiry": 10,                      # How long to keep messages in seconds
+            "hosts": [(os.getenv('REDIS_URL', '127.0.0.1:6379'))],  # Use REDIS_URL or default to localhost
         },
     },
 }
 
 CELERY_BROKER_URL = os.getenv('REDIS_URL')  # Use the same Redis URL as your cache
-CELERY_BROKER_TRANSPORT_OPTIONS = {
-    "max_connections": 20,  # Limit Redis connections
-}
 CELERY_RESULT_BACKEND = os.getenv('REDIS_URL')  # Store results in Redis
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'

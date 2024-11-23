@@ -28,7 +28,7 @@ const FetchRepoPage: React.FC = () => {
           ) : (
             <>
             <TaskStatus taskId={taskId} repoName={repoName!} />
-            <WebSocketUpdates taskId={taskId} />
+            {/* <WebSocketUpdates taskId={taskId} /> */}
             </>
           )}
         </CardContent>

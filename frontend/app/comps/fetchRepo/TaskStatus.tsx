@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import axios from "axios";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Progress } from "@/components/ui/progress";
-import { CheckCircle2, XCircle, Loader2 } from 'lucide-react';
+import { CheckCircle2, XCircle, Loader2 } from "lucide-react";
 
 interface TaskStatusProps {
   taskId: string;
@@ -13,35 +13,109 @@ interface TaskStatusProps {
 interface TaskUpdate {
   status: string;
   message: string;
-  type?: string;
+  type?: string; // Task name
+}
+
+interface Subtask {
+  id: string;
+  name: string;
+  status: string;
+  result: any;
+  info: any;
 }
 
 export const TaskStatus: React.FC<TaskStatusProps> = ({ taskId, repoName }) => {
   const [updates, setUpdates] = useState<TaskUpdate[]>([]);
-  const [completed, setCompleted] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [completed, setCompleted] = useState(false);
 
   useEffect(() => {
-    const interval = setInterval(async () => {
+    let isPolling = true;
+
+    const fetchTaskStatus = async () => {
       try {
-        const response = await axios.get(`http://localhost:8000/api/task-status/${taskId}/`);
-        const { status, result } = response.data;
+        const response = await axios.get(
+          `http://localhost:8000/api/task-status/${taskId}/`
+        );
+        const { status, meta, subtasks } = response.data;
 
-        setUpdates((prev) => [...prev, { status, message: result || `Task is ${status}` }]);
+        // Process subtasks
+        if (subtasks && Array.isArray(subtasks)) {
+          // Update progress
+          const totalSubtasks = subtasks.length;
+          const completedSubtasks = subtasks.filter(
+            (subtask) => subtask.status === "SUCCESS" || subtask.status === "FAILURE"
+          ).length;
+          const calculatedProgress = (completedSubtasks / totalSubtasks) * 100;
+          setProgress(calculatedProgress);
 
-        if (status === "SUCCESS" || status === "FAILURE") {
-          setCompleted(true);
-          clearInterval(interval);
-          setProgress(100);
+          subtasks.forEach((subtask) => {
+            const subtaskUpdate: TaskUpdate = {
+              status: subtask.status,
+              message: subtask.info ? subtask.info.message : "",
+              type: subtask.name,
+            };
+
+            // Update or add subtask updates without duplicates
+            setUpdates((prev) => {
+              const existingUpdateIndex = prev.findIndex(
+                (update) => update.type === subtaskUpdate.type
+              );
+              if (existingUpdateIndex !== -1) {
+                const existingUpdate = prev[existingUpdateIndex];
+                if (
+                  existingUpdate.status !== subtaskUpdate.status ||
+                  existingUpdate.message !== subtaskUpdate.message
+                ) {
+                  const newUpdates = [...prev];
+                  newUpdates[existingUpdateIndex] = subtaskUpdate;
+                  return newUpdates;
+                } else {
+                  return prev;
+                }
+              } else {
+                return [...prev, subtaskUpdate];
+              }
+            });
+          });
+
+          // Check if all subtasks are completed
+          if (completedSubtasks === totalSubtasks) {
+            setCompleted(true);
+            isPolling = false;
+          }
         } else {
-          setProgress((prev) => Math.min(prev + 10, 90));
+          // No subtasks, update progress based on main task status
+          if (status === "SUCCESS" || status === "FAILURE") {
+            setProgress(100);
+            setCompleted(true);
+            isPolling = false;
+          }
         }
       } catch (error) {
         console.error("Error fetching task status:", error);
+        setUpdates((prev) => [
+          ...prev,
+          {
+            status: "ERROR",
+            message: "Unable to fetch task status. Please try again.",
+            type: "Error",
+          },
+        ]);
+        isPolling = false;
+      }
+    };
+
+    // Start polling
+    const interval = setInterval(() => {
+      if (isPolling) {
+        fetchTaskStatus();
+      } else {
+        clearInterval(interval);
       }
     }, 2000);
 
-    return () => clearInterval(interval);
+    return () => clearInterval(interval); // Cleanup
   }, [taskId]);
 
   return (
@@ -59,10 +133,18 @@ export const TaskStatus: React.FC<TaskStatusProps> = ({ taskId, repoName }) => {
             <Alert
               variant={update.status === "FAILURE" ? "destructive" : "default"}
             >
-              {update.status === "SUCCESS" && <CheckCircle2 className="h-4 w-4" />}
+              {update.status === "SUCCESS" && (
+                <CheckCircle2 className="h-4 w-4" />
+              )}
               {update.status === "FAILURE" && <XCircle className="h-4 w-4" />}
-              {update.status !== "SUCCESS" && update.status !== "FAILURE" && <Loader2 className="h-4 w-4 animate-spin" />}
-              <AlertTitle>{update.type || "Task"} - {update.status}</AlertTitle> {/* Include task type */}
+              {update.status !== "SUCCESS" &&
+                update.status !== "FAILURE" &&
+                update.status !== "ERROR" && (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                )}
+              <AlertTitle>
+                {update.type || "Task"} - {update.status}
+              </AlertTitle>
               <AlertDescription>{update.message}</AlertDescription>
             </Alert>
           </motion.div>
@@ -76,8 +158,10 @@ export const TaskStatus: React.FC<TaskStatusProps> = ({ taskId, repoName }) => {
         >
           <Alert>
             <CheckCircle2 className="h-4 w-4" />
-            <AlertTitle>Task Completed</AlertTitle>
-            <AlertDescription>Check the repository stats for detailed information.</AlertDescription>
+            <AlertTitle>All Tasks Completed</AlertTitle>
+            <AlertDescription>
+              Check the repository stats for detailed information.
+            </AlertDescription>
           </Alert>
         </motion.div>
       )}

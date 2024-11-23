@@ -1,3 +1,4 @@
+from uuid import uuid4
 from celery import chord, shared_task, group
 from github import Github, GithubException, RateLimitExceededException
 from datetime import timedelta
@@ -12,12 +13,12 @@ import time
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
 
-def send_task_update(message):
-    channel_layer = get_channel_layer()
-    async_to_sync(channel_layer.group_send)(
-        "task_updates",
-        {"type": "send_task_update", "data": message},
-    )
+# def send_task_update(message):
+#     channel_layer = get_channel_layer()
+#     async_to_sync(channel_layer.group_send)(
+#         "task_updates",
+#         {"type": "send_task_update", "data": message},
+#     )
 
 
 def ensure_aware(dt):
@@ -68,40 +69,31 @@ def send_task_update(message):
     except Exception as e:
         print(f"Failed to send task update: {e}")
 
-@shared_task
-def on_all_tasks_complete(repo_full_name):
-    send_task_update({
-        "status": "Completed",
-        "message": f"Data fetching completed for {repo_full_name}."
-    })
-    print(f"All data fetching tasks completed for {repo_full_name}")
-
-
-
-# @shared_task
-# def fetch_repository_data(repo_full_name):
-#     send_task_update({
-#     "status": "Started",
-#     "message": f"Starting data fetching for repository: {repo_full_name}.",
-#     "task": "Fetch Repository Data"
-# })
+# @shared_task(bind=True)
+# def fetch_repository_data(self, repo_full_name):
+#     """
+#     Main task to fetch repository data, dynamically updating task state for polling.
+#     """
+#     self.update_state(state="STARTED", meta={"status": "Started", "message": f"Fetching data for {repo_full_name}"})
 #     print(f"Fetching data for repository: {repo_full_name}")
+
 #     token = os.getenv("GITHUB_TOKEN")
 #     if not token:
 #         error_message = "GitHub token not found!"
-#         send_task_update({"status": "Error", "message": error_message})
+#         self.update_state(state="FAILURE", meta={"status": "Error", "message": error_message})
 #         print(error_message)
-#         return
+#         return {"status": "FAILURE", "message": error_message}
 
 #     try:
 #         github_client = Github(token)
 #         repo = github_client.get_repo(repo_full_name)
 #     except GithubException as e:
 #         error_message = f"Failed to fetch repository data: {e}"
-#         send_task_update({"status": "Error", "message": error_message})
+#         self.update_state(state="FAILURE", meta={"status": "Error", "message": error_message})
 #         print(error_message)
-#         return
+#         return {"status": "FAILURE", "message": error_message}
 
+#     # Initialize repository
 #     repository, created = Repository.objects.update_or_create(
 #         name=repo.name,
 #         owner=repo.owner.login,
@@ -115,52 +107,55 @@ def on_all_tasks_complete(repo_full_name):
 #         }
 #     )
 
-#     send_task_update({"status": "Progress", "message": f"Initialized repository {repo.name}. Starting tasks..."})
+#     self.update_state(
+#         state="PROGRESS",
+#         meta={"status": "Progress", "message": f"Initialized repository {repo.name}. Starting tasks..."}
+#     )
 
-#     tasks = group(
+#     # Subtasks
+#     tasks = [
 #         fetch_contributors_data.s(repo_full_name, repository.id),
 #         fetch_issues_data.s(repo_full_name, repository.id),
 #         fetch_pull_requests_data.s(repo_full_name, repository.id),
 #         fetch_comments_data.s(repo_full_name, repository.id),
 #         fetch_additional_metrics.s(repo_full_name, repository.id),
+#     ]
+
+#     # Chord to execute all tasks and call a completion task
+#     chord(tasks)(on_all_tasks_complete.s(repo_full_name))
+
+#     self.update_state(
+#         state="PROGRESS",
+#         meta={"status": "Progress", "message": f"Triggered data fetching tasks for {repository.name}."}
 #     )
 
-#     result = tasks.apply_async()
+#     return {"status": "SUCCESS", "message": f"Data fetching initiated for {repo_full_name}"}
 
-   
-#     #result.join()  # Wait for tasks to complete if you need updates after
-
-#     send_task_update({
-#     "status": "Completed",
-#     "message": f"Data fetching completed for repository: {repo_full_name}.",
-#     "task": "Fetch Repository Data"
-#     })
-#     print(f"Initiated data fetching tasks for {repository.name}")
-
-
-@shared_task
-def fetch_repository_data(repo_full_name):
-    send_task_update({
-        "status": "Started",
-        "message": f"Fetching data for {repo_full_name}."
-    })
+@shared_task(bind=True)
+def fetch_repository_data(self, repo_full_name):
+    """
+    Main task to fetch repository data, dynamically updating task state for polling.
+    """
+    self.update_state(state="STARTED", meta={"status": "Started", "message": f"Fetching data for {repo_full_name}"})
     print(f"Fetching data for repository: {repo_full_name}")
+
     token = os.getenv("GITHUB_TOKEN")
     if not token:
         error_message = "GitHub token not found!"
-        send_task_update({"status": "Error", "message": error_message})
+        self.update_state(state="FAILURE", meta={"status": "Error", "message": error_message})
         print(error_message)
-        return
+        return {"status": "FAILURE", "message": error_message}
 
     try:
         github_client = Github(token)
         repo = github_client.get_repo(repo_full_name)
     except GithubException as e:
         error_message = f"Failed to fetch repository data: {e}"
-        send_task_update({"status": "Error", "message": error_message})
+        self.update_state(state="FAILURE", meta={"status": "Error", "message": error_message})
         print(error_message)
-        return
+        return {"status": "FAILURE", "message": error_message}
 
+    # Initialize repository
     repository, created = Repository.objects.update_or_create(
         name=repo.name,
         owner=repo.owner.login,
@@ -174,103 +169,146 @@ def fetch_repository_data(repo_full_name):
         }
     )
 
-    send_task_update({
-        "status": "Progress",
-        "message": f"Initialized repository {repo.name}. Starting tasks..."
-    })
-
-    tasks = [
-        fetch_contributors_data.s(repo_full_name, repo.id),
-        fetch_issues_data.s(repo_full_name, repo.id),
-        fetch_pull_requests_data.s(repo_full_name, repo.id),
-        fetch_comments_data.s(repo_full_name, repo.id),
-        fetch_additional_metrics.s(repo_full_name, repo.id),
+    # Subtasks with unique IDs and names
+    tasks = []
+    subtasks_info = []
+    task_definitions = [
+        (fetch_contributors_data, 'Fetch Contributors Data'),
+        (fetch_issues_data, 'Fetch Issues Data'),
+        (fetch_pull_requests_data, 'Fetch Pull Requests Data'),
+        (fetch_comments_data, 'Fetch Comments Data'),
+        (fetch_additional_metrics, 'Fetch Additional Metrics'),
     ]
 
-    chord(tasks)(on_all_tasks_complete.s())
+    for task_func, task_name in task_definitions:
+        task_id = str(uuid4())
+        sig = task_func.s(repo_full_name, repository.id).set(task_id=task_id)
+        tasks.append(sig)
+        subtasks_info.append({'id': task_id, 'name': task_name})
 
-    send_task_update({
-        "status": "Progress",
-        "message": f"Triggered data fetching tasks for {repository.name}."
-    })
-    print(f"Initiated data fetching tasks for {repository.name}")
+    # Create the chord
+    chord_result = chord(tasks)(on_all_tasks_complete.s(repo_full_name))
 
-@shared_task
-def fetch_contributors_data(repo_full_name, repository_id):
-    send_task_update({
-    "status": "Started",
-    "message": "Fetching contributors data...",
-    "task": "Fetch Contributors Data"
-})
+    # Update the task state with the subtasks information
+    self.update_state(
+        state="PROGRESS",
+        meta={
+            "status": "PROGRESS",
+            "message": f"Triggered data fetching tasks for {repository.name}.",
+            "subtasks": subtasks_info,
+        }
+    )
+
+    return {
+        "status": "PROGRESS",
+        "message": f"Triggered data fetching tasks for {repository.name}.",
+        "subtasks": subtasks_info,
+    }
+
+
+@shared_task(bind=True)
+def on_all_tasks_complete(self, task_results, repo_full_name=None):
+    """
+    Callback function for when all tasks in the chord are complete.
+    """
+    try:
+        # Log task results for debugging
+        print(f"All data fetching tasks completed for {repo_full_name}: {task_results}")
+
+        # Update task state
+        self.update_state(
+            state="SUCCESS",
+            meta={"status": "Completed", "message": f"All tasks completed for {repo_full_name}."}
+        )
+        return {
+            "status": "SUCCESS",
+            "message": f"Data fetching completed for {repo_full_name}.",
+            "task_results": task_results,
+        }
+    except Exception as e:
+        self.update_state(
+            state="FAILURE",
+            meta={"status": "Error", "message": f"Error completing tasks for {repo_full_name}: {e}"}
+        )
+        raise
+
+
+
+@shared_task(bind=True)
+def fetch_contributors_data(self, repo_full_name, repository_id):
+    self.update_state(state="STARTED", meta={"status": "Started", "message": "Fetching contributors data...", "task": "Fetch Contributors Data"})
     print(f"Fetching contributors for repository: {repo_full_name}")
+
     token = os.getenv("GITHUB_TOKEN")
-    repository = Repository.objects.get(id=repository_id)
-    github_client = Github(token)
+    if not token:
+        error_message = "GitHub token not found!"
+        self.update_state(state="FAILURE", meta={"status": "Error", "message": error_message, "task": "Fetch Contributors Data"})
+        return {"status": "Error", "message": error_message}
 
-    # Check cache
-    cache_key = f"contributors_{repo_full_name}"
-    contributors_data = cache.get(cache_key)
+    try:
+        repository = Repository.objects.get(id=repository_id)
+        github_client = Github(token)
 
-    if contributors_data is None:
-        try:
+        # Check cache
+        cache_key = f"contributors_{repo_full_name}"
+        contributors_data = cache.get(cache_key)
+
+        if contributors_data is None:
             repo = github_client.get_repo(repo_full_name)
             contributors = repo.get_contributors()
             contributors_data = [(contributor.login, contributor.contributions) for contributor in contributors]
             cache.set(cache_key, contributors_data, 6 * 3600)
-        except RateLimitExceededException:
-            handle_rate_limit(github_client)
-            return fetch_contributors_data(repo_full_name, repository_id)
-        except GithubException as e:
-            print(f"Error fetching contributors: {e}")
-            return
 
-    contributor_contributions = []
-    for username, contributions in contributors_data:
-        contrib_obj, _ = Contributor.objects.update_or_create(
-            username=username,
-            defaults={'total_contributions': contributions}
-        )
-        RepositoryContributor.objects.update_or_create(
-            repository=repository,
-            contributor=contrib_obj,
-            defaults={'contributions': contributions}
-        )
-        contributor_contributions.append((username, contributions))
+        contributor_contributions = []
+        for username, contributions in contributors_data:
+            contrib_obj, _ = Contributor.objects.update_or_create(
+                username=username,
+                defaults={'total_contributions': contributions}
+            )
+            RepositoryContributor.objects.update_or_create(
+                repository=repository,
+                contributor=contrib_obj,
+                defaults={'contributions': contributions}
+            )
+            contributor_contributions.append((username, contributions))
 
-    if contributor_contributions:
-        contributor_contributions.sort(key=lambda x: x[1], reverse=True)
-        top_contributors = contributor_contributions[:5]
-        repository.top_contributors = ', '.join([login for login, _ in top_contributors])
-    else:
-        repository.top_contributors = ''
+        if contributor_contributions:
+            contributor_contributions.sort(key=lambda x: x[1], reverse=True)
+            top_contributors = contributor_contributions[:5]
+            repository.top_contributors = ', '.join([login for login, _ in top_contributors])
+        else:
+            repository.top_contributors = ''
 
-    repository.save()
-    send_task_update({
-    "status": "Completed",
-    "message": "Contributors data fetched successfully.",
-    "task": "Fetch Contributors Data"
-})
-    print(f"Updated contributors for {repository.name}")
+        repository.save()
+        self.update_state(state="SUCCESS", meta={"status": "Completed", "message": "Contributors data fetched successfully.", "task": "Fetch Contributors Data"})
+        return {"status": "Completed", "message": "Contributors data fetched successfully."}
+    except GithubException as e:
+        error_message = f"Error fetching contributors: {e}"
+        self.update_state(state="FAILURE", meta={"status": "Error", "message": error_message, "task": "Fetch Contributors Data"})
+        return {"status": "Error", "message": error_message}
 
-@shared_task
-def fetch_issues_data(repo_full_name, repository_id):
-    send_task_update({
-    "status": "Started",
-    "message": "Fetching issues data...",
-    "task": "Fetch Issues Data"
-})
+
+@shared_task(bind=True)
+def fetch_issues_data(self, repo_full_name, repository_id):
+    self.update_state(state="STARTED", meta={"status": "Started", "message": "Fetching issues data...", "task": "Fetch Issues Data"})
     print(f"Fetching issues for repository: {repo_full_name}")
+
     token = os.getenv("GITHUB_TOKEN")
-    repository = Repository.objects.get(id=repository_id)
-    since_date = now() - timedelta(days=90)
-    github_client = Github(token)
+    if not token:
+        error_message = "GitHub token not found!"
+        self.update_state(state="FAILURE", meta={"status": "Error", "message": error_message, "task": "Fetch Issues Data"})
+        return {"status": "Error", "message": error_message}
 
-    # Check cache
-    cache_key = f"issues_{repo_full_name}"
-    issues_data = cache.get(cache_key)
+    try:
+        repository = Repository.objects.get(id=repository_id)
+        since_date = now() - timedelta(days=90)
+        github_client = Github(token)
 
-    if issues_data is None:
-        try:
+        # Check cache
+        cache_key = f"issues_{repo_full_name}"
+        issues_data = cache.get(cache_key)
+
+        if issues_data is None:
             repo = github_client.get_repo(repo_full_name)
             issues = repo.get_issues(state='all', since=since_date)
             issues_data = []
@@ -287,90 +325,87 @@ def fetch_issues_data(repo_full_name, repository_id):
                     'comments': issue.comments,
                 })
             cache.set(cache_key, issues_data, 3600)
-        except RateLimitExceededException:
-            handle_rate_limit(github_client)
-            return fetch_issues_data(repo_full_name, repository_id)
-        except GithubException as e:
-            print(f"Error fetching issues: {e}")
-            return
 
-    closed_issues_count = 0
-    open_issues_count = 0
-    total_issue_close_time = timedelta(0)
-    issue_close_times = []
+        closed_issues_count = 0
+        open_issues_count = 0
+        total_issue_close_time = timedelta(0)
+        issue_close_times = []
 
-    for issue_data in issues_data:
-        # Create or update Issue objects
-        issue_obj, created = Issue.objects.update_or_create(
-            repository=repository,
-            issue_number=issue_data['number'],
-            defaults={
-                'title': issue_data['title'],  # Truncated title
-                'body': issue_data['body'],  # Truncated body
-                'state': issue_data['state'],  # Truncated state
-                'created_at': issue_data['created_at'],
-                'closed_at': issue_data['closed_at'],
-            }
+        for issue_data in issues_data:
+            issue_obj, created = Issue.objects.update_or_create(
+                repository=repository,
+                issue_number=issue_data['number'],
+                defaults={
+                    'title': issue_data['title'],  # Truncated title
+                    'body': issue_data['body'],  # Truncated body
+                    'state': issue_data['state'],  # Truncated state
+                    'created_at': issue_data['created_at'],
+                    'closed_at': issue_data['closed_at'],
+                }
+            )
+
+            if issue_data['state'] == 'closed' and issue_data['closed_at']:
+                closed_issues_count += 1
+                close_time = (issue_data['closed_at'] - issue_data['created_at'])
+                total_issue_close_time += close_time
+                issue_close_times.append(close_time.total_seconds())
+            else:
+                open_issues_count += 1
+
+        avg_issue_close_time = (
+            total_issue_close_time / closed_issues_count if closed_issues_count > 0 else None
         )
 
-        if issue_data['state'] == 'closed' and issue_data['closed_at']:
-            closed_issues_count += 1
-            close_time = (issue_data['closed_at'] - issue_data['created_at'])
-            total_issue_close_time += close_time
-            issue_close_times.append(close_time.total_seconds())
-        else:
-            open_issues_count += 1
+        # Compute median issue close time
+        median_issue_close_time = None
+        if issue_close_times:
+            median_seconds = median(issue_close_times)
+            median_issue_close_time = timedelta(seconds=median_seconds)
 
-    avg_issue_close_time = (
-        total_issue_close_time / closed_issues_count if closed_issues_count > 0 else None
-    )
+        # Compute issue resolution rate
+        total_issues = closed_issues_count + open_issues_count
+        issue_resolution_rate = (closed_issues_count / total_issues) * 100 if total_issues > 0 else 0
 
-    # Compute median issue close time
-    median_issue_close_time = None
-    if issue_close_times:
-        median_seconds = median(issue_close_times)
-        median_issue_close_time = timedelta(seconds=median_seconds)
+        repository.avg_issue_close_time = avg_issue_close_time
+        repository.median_issue_response_time = median_issue_close_time
+        repository.open_issues_count = open_issues_count
+        repository.closed_issues_count = closed_issues_count
+        repository.issue_resolution_rate = issue_resolution_rate
+        repository.save()
 
-    # Compute issue resolution rate
-    total_issues = closed_issues_count + open_issues_count
-    issue_resolution_rate = (closed_issues_count / total_issues) * 100 if total_issues > 0 else 0
-
-    repository.avg_issue_close_time = avg_issue_close_time
-    repository.median_issue_response_time = median_issue_close_time
-    repository.open_issues_count = open_issues_count
-    repository.closed_issues_count = closed_issues_count
-    repository.issue_resolution_rate = issue_resolution_rate
-    repository.save()
-    send_task_update({
-    "status": "Completed",
-    "message": "Issues data fetched successfully.",
-    "task": "Fetch Issues Data"
-})
-    print(f"Updated issues data for {repository.name}")
+        self.update_state(state="SUCCESS", meta={"status": "Completed", "message": "Issues data fetched successfully.", "task": "Fetch Issues Data"})
+        return {"status": "Completed", "message": "Issues data fetched successfully."}
+    except GithubException as e:
+        error_message = f"Error fetching issues: {e}"
+        self.update_state(state="FAILURE", meta={"status": "Error", "message": error_message, "task": "Fetch Issues Data"})
+        return {"status": "Error", "message": error_message}
 
 
 
 
-@shared_task
-def fetch_pull_requests_data(repo_full_name, repository_id):
-    send_task_update({
-    "status": "Started",
-    "message": "Fetching pull requests data...",
-    "task": "Fetch Pull Requests Data"
-})
+
+@shared_task(bind=True)
+def fetch_pull_requests_data(self, repo_full_name, repository_id):
+    self.update_state(state="STARTED", meta={"status": "Started", "message": "Fetching pull requests data...", "task": "Fetch Pull Requests Data"})
     print(f"Fetching pull requests for repository: {repo_full_name}")
+
     token = os.getenv("GITHUB_TOKEN")
-    repository = Repository.objects.get(id=repository_id)
-    since_date = now() - timedelta(days=90)
-    github_client = Github(token)
+    if not token:
+        error_message = "GitHub token not found!"
+        self.update_state(state="FAILURE", meta={"status": "Error", "message": error_message, "task": "Fetch Pull Requests Data"})
+        return {"status": "Error", "message": error_message}
 
-    # Check cache
-    cache_key = f"pull_requests_{repo_full_name}"
-    prs_data = cache.get(cache_key)
+    try:
+        repository = Repository.objects.get(id=repository_id)
+        since_date = now() - timedelta(days=90)
+        github_client = Github(token)
 
-    if prs_data is None:
-        prs_data = []
-        try:
+        # Check cache
+        cache_key = f"pull_requests_{repo_full_name}"
+        prs_data = cache.get(cache_key)
+
+        if prs_data is None:
+            prs_data = []
             repo = github_client.get_repo(repo_full_name)
             pulls = repo.get_pulls(state='all', sort='created', direction='desc')
             for pr in pulls:
@@ -384,277 +419,227 @@ def fetch_pull_requests_data(repo_full_name, repository_id):
                     'created_at': ensure_aware(pr.created_at),
                     'merged_at': ensure_aware(pr.merged_at) if pr.merged_at else None,
                     'merged': pr.is_merged(),
-                    'comments': pr.comments,
                 })
             cache.set(cache_key, prs_data, 3600)
-        except RateLimitExceededException:
-            handle_rate_limit(github_client)
-            return fetch_pull_requests_data(repo_full_name, repository_id)
-        except GithubException as e:
-            print(f"Error fetching pull requests: {e}")
-            return
 
-    merged_pr_count = 0
-    unmerged_pr_count = 0
-    total_pr_merge_time = timedelta(0)
-    pr_merge_times = []
+        merged_pr_count = 0
+        unmerged_pr_count = 0
+        total_pr_merge_time = timedelta(0)
+        pr_merge_times = []
 
-    for pr_data in prs_data:
-        # Create or update PullRequest objects
-        pr_obj, created = PullRequest.objects.update_or_create(
-            repository=repository,
-            pr_number=pr_data['number'],
-            defaults={
-                'title': pr_data['title'],
-                'body': pr_data['body'],
-                'state': pr_data['state'],
-                'merged': pr_data['merged'],
-                'created_at': pr_data['created_at'],
-                'merged_at': pr_data['merged_at'],
-            }
-        )
+        for pr_data in prs_data:
+            pr_obj, created = PullRequest.objects.update_or_create(
+                repository=repository,
+                pr_number=pr_data['number'],
+                defaults={
+                    'title': pr_data['title'],
+                    'body': pr_data['body'],
+                    'state': pr_data['state'],
+                    'merged': pr_data['merged'],
+                    'created_at': pr_data['created_at'],
+                    'merged_at': pr_data['merged_at'],
+                }
+            )
 
-        if pr_data['merged'] and pr_data['merged_at']:
-            merged_pr_count += 1
-            merge_time = (pr_data['merged_at'] - pr_data['created_at'])
-            total_pr_merge_time += merge_time
-            pr_merge_times.append(merge_time.total_seconds())
-        else:
-            unmerged_pr_count += 1
-
-    avg_pr_merge_time = (
-        total_pr_merge_time / merged_pr_count if merged_pr_count > 0 else None
-    )
-
-    # Compute median PR merge time
-    median_pr_merge_time = None
-    if pr_merge_times:
-        median_seconds = median(pr_merge_times)
-        median_pr_merge_time = timedelta(seconds=median_seconds)
-
-    # Compute PR merge rate
-    total_prs = merged_pr_count + unmerged_pr_count
-    pr_merge_rate = (merged_pr_count / total_prs) * 100 if total_prs > 0 else 0
-
-    repository.merged_pr_count = merged_pr_count
-    repository.unmerged_pr_count = unmerged_pr_count
-    repository.avg_pr_merge_time = avg_pr_merge_time
-    repository.median_pr_response_time = median_pr_merge_time
-    repository.pr_merge_rate = pr_merge_rate
-    repository.save()
-    send_task_update({
-    "status": "Completed",
-    "message": "Pull requests data fetched successfully.",
-    "task": "Fetch Pull Requests Data"
-})
-    print(f"Updated pull requests data for {repository.name}")
-
-@shared_task
-def fetch_comments_data(repo_full_name, repository_id):
-    """
-    Fetch comments for a repository and calculate sentiment metrics.
-    """
-    send_task_update({
-    "status": "Started",
-    "message": "Fetching comments data...",
-    "task": "Fetch Comments Data"
-})
-    print(f"Fetching comments for repository: {repo_full_name}")
-    token = os.getenv("GITHUB_TOKEN")
-    repository = Repository.objects.get(id=repository_id)
-    since_date = now() - timedelta(days=90)  # Adjust as needed
-    github_client = Github(token)
-
-    # Check cache
-    cache_key = f"comments_{repo_full_name}"
-    comments_data = cache.get(cache_key)
-
-    if comments_data is None:
-        try:
-            repo = github_client.get_repo(repo_full_name)
-            comments = repo.get_issues_comments(since=since_date)
-            comments_data = []
-            for comment in comments:
-                comments_data.append({
-                    'author': comment.user.login,
-                    'body': comment.body,
-                    'created_at': ensure_aware(comment.created_at),
-                    'issue_number': comment.issue_url.split('/')[-1],
-                })
-            # Cache the comments data for 1 hour
-            cache.set(cache_key, comments_data, 3600)
-        except RateLimitExceededException:
-            handle_rate_limit(github_client)
-            return fetch_comments_data(repo_full_name, repository_id)
-        except GithubException as e:
-            print(f"Error fetching comments: {e}")
-            return
-    else:
-        print("Loaded comments from cache.")
-
-    if not comments_data:
-        print(f"No comments found for {repository.name}")
-        repository.positive_comment_percentage = 0
-        repository.negative_comment_percentage = 0
-        repository.neutral_comment_percentage = 0
-        repository.save()
-        return
-
-    # Initialize sentiment analysis pipeline
-    sentiment_analyzer = pipeline("sentiment-analysis", model="nlptown/bert-base-multilingual-uncased-sentiment")
-    total_comments = len(comments_data)
-    positive_comments = 0
-    negative_comments = 0
-    neutral_comments = 0
-
-    for comment_data in comments_data:
-        # Analyze sentiment
-        try:
-            sentiment_result = sentiment_analyzer(comment_data['body'][:512])[0]
-            sentiment = sentiment_result['label']
-            if '5' in sentiment or '4' in sentiment:
-                positive_comments += 1
-                sentiment_label = 'positive'
-            elif '1' in sentiment or '2' in sentiment:
-                negative_comments += 1
-                sentiment_label = 'negative'
+            if pr_data['merged'] and pr_data['merged_at']:
+                merged_pr_count += 1
+                merge_time = (pr_data['merged_at'] - pr_data['created_at'])
+                total_pr_merge_time += merge_time
+                pr_merge_times.append(merge_time.total_seconds())
             else:
-                neutral_comments += 1
-                sentiment_label = 'neutral'
-        except Exception as e:
-            print(f"Error analyzing sentiment: {e}")
-            sentiment_label = 'neutral'
-            neutral_comments += 1
+                unmerged_pr_count += 1
 
-        # Save comment to database
-        Comment.objects.update_or_create(
-            repository=repository,
-            author=comment_data['author'],
-            body=comment_data['body'],
-            created_at=comment_data['created_at'],
-            content_type='issue',  # Assuming issue comments
-            object_id=comment_data['issue_number'],
-            defaults={
-                'sentiment': sentiment_label
-            }
+        avg_pr_merge_time = (
+            total_pr_merge_time / merged_pr_count if merged_pr_count > 0 else None
         )
 
-    # Calculate percentages
-    if total_comments > 0:
-        positive_comment_percentage = (positive_comments / total_comments) * 100
-        negative_comment_percentage = (negative_comments / total_comments) * 100
-        neutral_comment_percentage = (neutral_comments / total_comments) * 100
-    else:
-        positive_comment_percentage = negative_comment_percentage = neutral_comment_percentage = 0
+        median_pr_merge_time = None
+        if pr_merge_times:
+            median_seconds = median(pr_merge_times)
+            median_pr_merge_time = timedelta(seconds=median_seconds)
 
-    # Update repository sentiment metrics
-    repository.positive_comment_percentage = positive_comment_percentage
-    repository.negative_comment_percentage = negative_comment_percentage
-    repository.neutral_comment_percentage = neutral_comment_percentage
-    repository.save()
-    send_task_update({
-    "status": "Completed",
-    "message": "Comments data fetched successfully.",
-    "task": "Fetch Comments Data"
-})
-    print(f"Updated comments data for {repository.name}")
+        total_prs = merged_pr_count + unmerged_pr_count
+        pr_merge_rate = (merged_pr_count / total_prs) * 100 if total_prs > 0 else 0
 
-@shared_task
-def fetch_additional_metrics(repo_full_name, repository_id):
-    send_task_update({
-    "status": "Started",
-    "message": "Fetching additional metrics...",
-    "task": "Fetch Additional Metrics"
-})
-    print(f"Fetching additional metrics for repository: {repo_full_name}")
+        repository.merged_pr_count = merged_pr_count
+        repository.unmerged_pr_count = unmerged_pr_count
+        repository.avg_pr_merge_time = avg_pr_merge_time
+        repository.median_pr_response_time = median_pr_merge_time
+        repository.pr_merge_rate = pr_merge_rate
+        repository.save()
+
+        self.update_state(state="SUCCESS", meta={"status": "Completed", "message": "Pull requests data fetched successfully.", "task": "Fetch Pull Requests Data"})
+        return {"status": "Completed", "message": "Pull requests data fetched successfully."}
+    except GithubException as e:
+        error_message = f"Error fetching pull requests: {e}"
+        self.update_state(state="FAILURE", meta={"status": "Error", "message": error_message, "task": "Fetch Pull Requests Data"})
+        return {"status": "Error", "message": error_message}
+
+
+@shared_task(bind=True)
+def fetch_comments_data(self, repo_full_name, repository_id):
+    self.update_state(state="STARTED", meta={"status": "Started", "message": "Fetching comments data...", "task": "Fetch Comments Data"})
+    print(f"Fetching comments for repository: {repo_full_name}")
+    
     token = os.getenv("GITHUB_TOKEN")
-    repository = Repository.objects.get(id=repository_id)
-    since_date = now() - timedelta(days=90)
-    github_client = Github(token)
+    if not token:
+        error_message = "GitHub token not found!"
+        self.update_state(state="FAILURE", meta={"status": "Error", "message": error_message, "task": "Fetch Comments Data"})
+        return {"status": "Error", "message": error_message}
 
     try:
-        repo = github_client.get_repo(repo_full_name)
-    except GithubException as e:
-        print(f"Error accessing repository: {e}")
-        return
+        repository = Repository.objects.get(id=repository_id)
+        since_date = now() - timedelta(days=90)
+        github_client = Github(token)
 
-    # Fetch commit count (Cached)
-    commit_count = cache.get(f"commits_{repo_full_name}")
-    if commit_count is None:
-        try:
+        # Check cache
+        cache_key = f"comments_{repo_full_name}"
+        comments_data = cache.get(cache_key)
+
+        if comments_data is None:
+            try:
+                repo = github_client.get_repo(repo_full_name)
+                comments = repo.get_issues_comments(since=since_date)
+                comments_data = [
+                    {
+                        'author': comment.user.login,
+                        'body': comment.body,
+                        'created_at': ensure_aware(comment.created_at),
+                        'issue_number': comment.issue_url.split('/')[-1],
+                    }
+                    for comment in comments
+                ]
+                cache.set(cache_key, comments_data, 3600)
+            except RateLimitExceededException:
+                handle_rate_limit(github_client)
+                return fetch_comments_data(repo_full_name, repository_id)
+            except GithubException as e:
+                error_message = f"Error fetching comments: {e}"
+                self.update_state(state="FAILURE", meta={"status": "Error", "message": error_message, "task": "Fetch Comments Data"})
+                return {"status": "Error", "message": error_message}
+        else:
+            print("Loaded comments from cache.")
+
+        # Sentiment analysis setup
+        sentiment_analyzer = pipeline("sentiment-analysis", model="nlptown/bert-base-multilingual-uncased-sentiment")
+        total_comments = len(comments_data)
+        positive_comments = 0
+        negative_comments = 0
+        neutral_comments = 0
+
+        for comment_data in comments_data:
+            try:
+                sentiment_result = sentiment_analyzer(comment_data['body'][:512])[0]
+                sentiment = sentiment_result['label']
+                if '5' in sentiment or '4' in sentiment:
+                    positive_comments += 1
+                    sentiment_label = 'positive'
+                elif '1' in sentiment or '2' in sentiment:
+                    negative_comments += 1
+                    sentiment_label = 'negative'
+                else:
+                    neutral_comments += 1
+                    sentiment_label = 'neutral'
+            except Exception as e:
+                print(f"Error analyzing sentiment: {e}")
+                sentiment_label = 'neutral'
+                neutral_comments += 1
+
+            Comment.objects.update_or_create(
+                repository=repository,
+                author=comment_data['author'],
+                body=comment_data['body'],
+                created_at=comment_data['created_at'],
+                content_type='issue',  # Assuming issue comments
+                object_id=comment_data['issue_number'],
+                defaults={'sentiment': sentiment_label}
+            )
+
+        # Calculate percentages
+        if total_comments > 0:
+            positive_comment_percentage = (positive_comments / total_comments) * 100
+            negative_comment_percentage = (negative_comments / total_comments) * 100
+            neutral_comment_percentage = (neutral_comments / total_comments) * 100
+        else:
+            positive_comment_percentage = negative_comment_percentage = neutral_comment_percentage = 0
+
+        repository.positive_comment_percentage = positive_comment_percentage
+        repository.negative_comment_percentage = negative_comment_percentage
+        repository.neutral_comment_percentage = neutral_comment_percentage
+        repository.save()
+
+        self.update_state(state="SUCCESS", meta={"status": "Completed", "message": "Comments data fetched successfully.", "task": "Fetch Comments Data"})
+        return {"status": "Completed", "message": "Comments data fetched successfully."}
+    except Exception as e:
+        error_message = f"Unexpected error: {e}"
+        self.update_state(state="FAILURE", meta={"status": "Error", "message": error_message, "task": "Fetch Comments Data"})
+        return {"status": "Error", "message": error_message}
+
+
+@shared_task(bind=True)
+def fetch_additional_metrics(self, repo_full_name, repository_id):
+    try:
+        self.update_state(state="STARTED", meta={"status": "Started", "message": "Fetching additional metrics...", "task": "Fetch Additional Metrics"})
+        print(f"Fetching additional metrics for repository: {repo_full_name}")
+
+        token = os.getenv("GITHUB_TOKEN")
+        if not token:
+            error_message = "GitHub token not found!"
+            self.update_state(state="FAILURE", meta={"status": "Error", "message": error_message, "task": "Fetch Additional Metrics"})
+            return {"status": "Error", "message": error_message}
+
+        repository = Repository.objects.get(id=repository_id)
+        since_date = now() - timedelta(days=90)
+        github_client = Github(token)
+
+        repo = github_client.get_repo(repo_full_name)
+
+        # Commit count
+        commit_count = cache.get(f"commits_{repo_full_name}")
+        if commit_count is None:
             commit_count = repo.get_commits(since=since_date).totalCount
             cache.set(f"commits_{repo_full_name}", commit_count, 7 * 24 * 3600)
-        except RateLimitExceededException:
-            handle_rate_limit(github_client)
-            return fetch_additional_metrics(repo_full_name, repository_id)
-        except GithubException as e:
-            print(f"Error fetching commits: {e}")
-            commit_count = 0
 
-    # Fetch languages (Cached)
-    languages = cache.get(f"languages_{repo_full_name}")
-    if languages is None:
-        try:
+        # Languages
+        languages = cache.get(f"languages_{repo_full_name}")
+        if languages is None:
             languages = repo.get_languages()
             cache.set(f"languages_{repo_full_name}", languages, 30 * 24 * 3600)
-        except RateLimitExceededException:
-            handle_rate_limit(github_client)
-            return fetch_additional_metrics(repo_full_name, repository_id)
-        except GithubException as e:
-            print(f"Error fetching languages: {e}")
-            languages = {}
 
-    # Check for community health files
-    try:
+        # Community health files
         contributing_guidelines = file_exists_in_repo(repo, 'CONTRIBUTING.md')
         code_of_conduct = file_exists_in_repo(repo, 'CODE_OF_CONDUCT.md')
-        issue_template = (
-            file_exists_in_repo(repo, '.github/ISSUE_TEMPLATE.md') or
-            file_exists_in_repo(repo, '.github/ISSUE_TEMPLATE')
-        )
-        pr_template = (
-            file_exists_in_repo(repo, '.github/PULL_REQUEST_TEMPLATE.md') or
-            file_exists_in_repo(repo, '.github/PULL_REQUEST_TEMPLATE')
-        )
-    except RateLimitExceededException:
-        handle_rate_limit(github_client)
-        return fetch_additional_metrics(repo_full_name, repository_id)
-    except GithubException as e:
-        print(f"Error checking community health files: {e}")
-        contributing_guidelines = code_of_conduct = issue_template = pr_template = False
+        issue_template = file_exists_in_repo(repo, '.github/ISSUE_TEMPLATE.md') or file_exists_in_repo(repo, '.github/ISSUE_TEMPLATE')
+        pr_template = file_exists_in_repo(repo, '.github/PULL_REQUEST_TEMPLATE.md') or file_exists_in_repo(repo, '.github/PULL_REQUEST_TEMPLATE')
 
-    # Fetch star growth rate (Optimized)
-    star_growth_rate = cache.get(f"star_growth_rate_{repo_full_name}")
-    if star_growth_rate is None:
-        try:
-            thirty_days_ago = (now() - timedelta(days=30)).strftime('%Y-%m-%d')
-            query = f"repo:{repo_full_name} stars:>={thirty_days_ago}"
-            result = github_client.search_repositories(query)
-            stars_last_month = result.totalCount
+        # Star growth rate
+        star_growth_rate = cache.get(f"star_growth_rate_{repo_full_name}")
+        if star_growth_rate is None:
+            thirty_days_ago = now() - timedelta(days=30)
+            stargazers = repo.get_stargazers_with_dates()
+            stars_last_month = sum(
+                1 for star in stargazers if ensure_aware(star.starred_at) >= thirty_days_ago
+            )
             star_growth_rate = stars_last_month / 30
             cache.set(f"star_growth_rate_{repo_full_name}", star_growth_rate, 30 * 24 * 3600)
-        except RateLimitExceededException:
-            handle_rate_limit(github_client)
-            return fetch_additional_metrics(repo_full_name, repository_id)
-        except GithubException as e:
-            print(f"Error fetching stargazers: {e}")
-            star_growth_rate = 0
 
-    # Update repository
-    repository.commit_count = commit_count
-    repository.languages = languages
-    repository.contributing_guidelines = contributing_guidelines
-    repository.code_of_conduct = code_of_conduct
-    repository.issue_template = issue_template
-    repository.pr_template = pr_template
-    repository.star_growth_rate = star_growth_rate
-    repository.save()
-    send_task_update({
-    "status": "Completed",
-    "message": "Additional metrics fetched successfully.",
-    "task": "Fetch Additional Metrics"
-})
-    print(f"Updated additional metrics for {repository.name}")
+        # Dependencies (example, adjust if needed)
+        dependencies = []  # Mock example, add logic if dependency data is available
 
+        repository.commit_count = commit_count
+        repository.languages = languages
+        repository.contributing_guidelines = contributing_guidelines
+        repository.code_of_conduct = code_of_conduct
+        repository.issue_template = issue_template
+        repository.pr_template = pr_template
+        repository.star_growth_rate = star_growth_rate
+        repository.dependencies = dependencies  # Save dependencies if implemented
+        repository.save()
 
-
+        self.update_state(state="SUCCESS", meta={"status": "Completed", "message": "Additional metrics fetched successfully.", "task": "Fetch Additional Metrics"})
+        return {"status": "Completed", "message": "Additional metrics fetched successfully."}
+    except Exception as e:
+        error_message = f"Unexpected error: {e}"
+        print(f"Error in fetch_additional_metrics: {e}")
+        self.update_state(state="FAILURE", meta={"status": "Error", "message": error_message, "task": "Fetch Additional Metrics"})
+        return {"status": "Error", "message": error_message}
