@@ -1,4 +1,4 @@
-from celery import shared_task, group
+from celery import chord, shared_task, group
 from github import Github, GithubException, RateLimitExceededException
 from datetime import timedelta
 from django.utils.timezone import make_aware, is_aware, now
@@ -53,22 +53,97 @@ def handle_rate_limit(github_client):
         print(f"Rate limit exceeded. Sleeping for {sleep_time} seconds.")
         time.sleep(sleep_time + 1)  # Sleep until rate limit resets
 
-from channels.layers import get_channel_layer
-from asgiref.sync import async_to_sync
+
 
 def send_task_update(message):
     """
     Send updates to the WebSocket group 'task_updates'.
     """
-    channel_layer = get_channel_layer()
-    async_to_sync(channel_layer.group_send)(
-        "task_updates",
-        {"type": "send_task_update", "data": message},
-    )
+    try:
+        channel_layer = get_channel_layer()
+        async_to_sync(channel_layer.group_send)(
+            "task_updates",
+            {"type": "send_task_update", "data": message},
+        )
+    except Exception as e:
+        print(f"Failed to send task update: {e}")
+
+@shared_task
+def on_all_tasks_complete(repo_full_name):
+    send_task_update({
+        "status": "Completed",
+        "message": f"Data fetching completed for {repo_full_name}."
+    })
+    print(f"All data fetching tasks completed for {repo_full_name}")
+
+
+
+# @shared_task
+# def fetch_repository_data(repo_full_name):
+#     send_task_update({
+#     "status": "Started",
+#     "message": f"Starting data fetching for repository: {repo_full_name}.",
+#     "task": "Fetch Repository Data"
+# })
+#     print(f"Fetching data for repository: {repo_full_name}")
+#     token = os.getenv("GITHUB_TOKEN")
+#     if not token:
+#         error_message = "GitHub token not found!"
+#         send_task_update({"status": "Error", "message": error_message})
+#         print(error_message)
+#         return
+
+#     try:
+#         github_client = Github(token)
+#         repo = github_client.get_repo(repo_full_name)
+#     except GithubException as e:
+#         error_message = f"Failed to fetch repository data: {e}"
+#         send_task_update({"status": "Error", "message": error_message})
+#         print(error_message)
+#         return
+
+#     repository, created = Repository.objects.update_or_create(
+#         name=repo.name,
+#         owner=repo.owner.login,
+#         defaults={
+#             'description': repo.description,
+#             'stars': repo.stargazers_count,
+#             'forks': repo.forks_count,
+#             'open_issues': repo.open_issues_count,
+#             'created_at': ensure_aware(repo.created_at),
+#             'updated_at': ensure_aware(repo.updated_at),
+#         }
+#     )
+
+#     send_task_update({"status": "Progress", "message": f"Initialized repository {repo.name}. Starting tasks..."})
+
+#     tasks = group(
+#         fetch_contributors_data.s(repo_full_name, repository.id),
+#         fetch_issues_data.s(repo_full_name, repository.id),
+#         fetch_pull_requests_data.s(repo_full_name, repository.id),
+#         fetch_comments_data.s(repo_full_name, repository.id),
+#         fetch_additional_metrics.s(repo_full_name, repository.id),
+#     )
+
+#     result = tasks.apply_async()
+
+   
+#     #result.join()  # Wait for tasks to complete if you need updates after
+
+#     send_task_update({
+#     "status": "Completed",
+#     "message": f"Data fetching completed for repository: {repo_full_name}.",
+#     "task": "Fetch Repository Data"
+#     })
+#     print(f"Initiated data fetching tasks for {repository.name}")
+
 
 @shared_task
 def fetch_repository_data(repo_full_name):
-    send_task_update({"status": "Started", "message": f"Fetching data for {repo_full_name}."})
+    send_task_update({
+        "status": "Started",
+        "message": f"Fetching data for {repo_full_name}."
+    })
     print(f"Fetching data for repository: {repo_full_name}")
     token = os.getenv("GITHUB_TOKEN")
     if not token:
@@ -99,27 +174,34 @@ def fetch_repository_data(repo_full_name):
         }
     )
 
-    send_task_update({"status": "Progress", "message": f"Initialized repository {repo.name}. Starting tasks..."})
+    send_task_update({
+        "status": "Progress",
+        "message": f"Initialized repository {repo.name}. Starting tasks..."
+    })
 
-    tasks = group(
-        fetch_contributors_data.s(repo_full_name, repository.id),
-        fetch_issues_data.s(repo_full_name, repository.id),
-        fetch_pull_requests_data.s(repo_full_name, repository.id),
-        fetch_comments_data.s(repo_full_name, repository.id),
-        fetch_additional_metrics.s(repo_full_name, repository.id),
-    )
+    tasks = [
+        fetch_contributors_data.s(repo_full_name, repo.id),
+        fetch_issues_data.s(repo_full_name, repo.id),
+        fetch_pull_requests_data.s(repo_full_name, repo.id),
+        fetch_comments_data.s(repo_full_name, repo.id),
+        fetch_additional_metrics.s(repo_full_name, repo.id),
+    ]
 
-    result = tasks.apply_async()
+    chord(tasks)(on_all_tasks_complete.s())
 
-    send_task_update({"status": "Progress", "message": f"Triggered data fetching tasks for {repository.name}."})
-    #result.join()  # Wait for tasks to complete if you need updates after
-
-    send_task_update({"status": "Completed", "message": f"Data fetching completed for {repository.name}."})
+    send_task_update({
+        "status": "Progress",
+        "message": f"Triggered data fetching tasks for {repository.name}."
+    })
     print(f"Initiated data fetching tasks for {repository.name}")
-
 
 @shared_task
 def fetch_contributors_data(repo_full_name, repository_id):
+    send_task_update({
+    "status": "Started",
+    "message": "Fetching contributors data...",
+    "task": "Fetch Contributors Data"
+})
     print(f"Fetching contributors for repository: {repo_full_name}")
     token = os.getenv("GITHUB_TOKEN")
     repository = Repository.objects.get(id=repository_id)
@@ -163,10 +245,20 @@ def fetch_contributors_data(repo_full_name, repository_id):
         repository.top_contributors = ''
 
     repository.save()
+    send_task_update({
+    "status": "Completed",
+    "message": "Contributors data fetched successfully.",
+    "task": "Fetch Contributors Data"
+})
     print(f"Updated contributors for {repository.name}")
 
 @shared_task
 def fetch_issues_data(repo_full_name, repository_id):
+    send_task_update({
+    "status": "Started",
+    "message": "Fetching issues data...",
+    "task": "Fetch Issues Data"
+})
     print(f"Fetching issues for repository: {repo_full_name}")
     token = os.getenv("GITHUB_TOKEN")
     repository = Repository.objects.get(id=repository_id)
@@ -249,6 +341,11 @@ def fetch_issues_data(repo_full_name, repository_id):
     repository.closed_issues_count = closed_issues_count
     repository.issue_resolution_rate = issue_resolution_rate
     repository.save()
+    send_task_update({
+    "status": "Completed",
+    "message": "Issues data fetched successfully.",
+    "task": "Fetch Issues Data"
+})
     print(f"Updated issues data for {repository.name}")
 
 
@@ -256,6 +353,11 @@ def fetch_issues_data(repo_full_name, repository_id):
 
 @shared_task
 def fetch_pull_requests_data(repo_full_name, repository_id):
+    send_task_update({
+    "status": "Started",
+    "message": "Fetching pull requests data...",
+    "task": "Fetch Pull Requests Data"
+})
     print(f"Fetching pull requests for repository: {repo_full_name}")
     token = os.getenv("GITHUB_TOKEN")
     repository = Repository.objects.get(id=repository_id)
@@ -340,6 +442,11 @@ def fetch_pull_requests_data(repo_full_name, repository_id):
     repository.median_pr_response_time = median_pr_merge_time
     repository.pr_merge_rate = pr_merge_rate
     repository.save()
+    send_task_update({
+    "status": "Completed",
+    "message": "Pull requests data fetched successfully.",
+    "task": "Fetch Pull Requests Data"
+})
     print(f"Updated pull requests data for {repository.name}")
 
 @shared_task
@@ -347,6 +454,11 @@ def fetch_comments_data(repo_full_name, repository_id):
     """
     Fetch comments for a repository and calculate sentiment metrics.
     """
+    send_task_update({
+    "status": "Started",
+    "message": "Fetching comments data...",
+    "task": "Fetch Comments Data"
+})
     print(f"Fetching comments for repository: {repo_full_name}")
     token = os.getenv("GITHUB_TOKEN")
     repository = Repository.objects.get(id=repository_id)
@@ -440,10 +552,20 @@ def fetch_comments_data(repo_full_name, repository_id):
     repository.negative_comment_percentage = negative_comment_percentage
     repository.neutral_comment_percentage = neutral_comment_percentage
     repository.save()
+    send_task_update({
+    "status": "Completed",
+    "message": "Comments data fetched successfully.",
+    "task": "Fetch Comments Data"
+})
     print(f"Updated comments data for {repository.name}")
 
 @shared_task
 def fetch_additional_metrics(repo_full_name, repository_id):
+    send_task_update({
+    "status": "Started",
+    "message": "Fetching additional metrics...",
+    "task": "Fetch Additional Metrics"
+})
     print(f"Fetching additional metrics for repository: {repo_full_name}")
     token = os.getenv("GITHUB_TOKEN")
     repository = Repository.objects.get(id=repository_id)
@@ -527,7 +649,11 @@ def fetch_additional_metrics(repo_full_name, repository_id):
     repository.pr_template = pr_template
     repository.star_growth_rate = star_growth_rate
     repository.save()
-
+    send_task_update({
+    "status": "Completed",
+    "message": "Additional metrics fetched successfully.",
+    "task": "Fetch Additional Metrics"
+})
     print(f"Updated additional metrics for {repository.name}")
 
 

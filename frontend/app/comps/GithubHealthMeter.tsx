@@ -68,7 +68,7 @@ export default function GitHubHealthMeter({
         </svg>
         {/* Center Content */}
         <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-          <span className="text-4xl font-bold text-gray-800 mb-2">{formattedPositive}%</span>
+          <span className={`text-4xl font-bold ${isHealthy ? 'text-green-500' : 'text-red-500'} text-gray-800 mb-2`}>{formattedPositive}%</span>
           <div className="flex items-center mt-1">
             {isHealthy ? (
               <CheckCircle className="w-5 h-5 text-green-500" />

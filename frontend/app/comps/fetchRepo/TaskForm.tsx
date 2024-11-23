@@ -27,7 +27,7 @@ export const TaskForm: React.FC<TaskFormProps> = ({ onTaskStart }) => {
       const [, owner, name] = match;
       const repoName = `${owner}/${name}`;
 
-      const response = await axios.post("/fetch-repository/", { repo_name: repoName });
+      const response = await axios.post("http://localhost:8000/api/fetch-repository/", { repo_name: repoName });
 
       if (response.status === 202) {
         onTaskStart(response.data.task_id, repoName);

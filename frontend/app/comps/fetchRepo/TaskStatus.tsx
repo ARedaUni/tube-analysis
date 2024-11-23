@@ -13,6 +13,7 @@ interface TaskStatusProps {
 interface TaskUpdate {
   status: string;
   message: string;
+  type?: string;
 }
 
 export const TaskStatus: React.FC<TaskStatusProps> = ({ taskId, repoName }) => {
@@ -23,7 +24,7 @@ export const TaskStatus: React.FC<TaskStatusProps> = ({ taskId, repoName }) => {
   useEffect(() => {
     const interval = setInterval(async () => {
       try {
-        const response = await axios.get(`/task-status/${taskId}/`);
+        const response = await axios.get(`http://localhost:8000/api/task-status/${taskId}/`);
         const { status, result } = response.data;
 
         setUpdates((prev) => [...prev, { status, message: result || `Task is ${status}` }]);
@@ -61,7 +62,7 @@ export const TaskStatus: React.FC<TaskStatusProps> = ({ taskId, repoName }) => {
               {update.status === "SUCCESS" && <CheckCircle2 className="h-4 w-4" />}
               {update.status === "FAILURE" && <XCircle className="h-4 w-4" />}
               {update.status !== "SUCCESS" && update.status !== "FAILURE" && <Loader2 className="h-4 w-4 animate-spin" />}
-              <AlertTitle>{update.status}</AlertTitle>
+              <AlertTitle>{update.type || "Task"} - {update.status}</AlertTitle> {/* Include task type */}
               <AlertDescription>{update.message}</AlertDescription>
             </Alert>
           </motion.div>

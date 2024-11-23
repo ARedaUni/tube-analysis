@@ -16,7 +16,7 @@ repositories = [
     "django/django",
     "vuejs/vue",
     "octocat/Hello-World",
-   "public-apis/public-apis"
+    "public-apis/public-apis"
   # "httpie/httpie"
 ]
 
@@ -60,8 +60,8 @@ def monitor_task(task_id):
 
 
 def main():
-    # cache.clear()
-    # print("Cache cleared!")
+    cache.clear()
+    print("Cache cleared!")
     print("Starting Celery tasks...")
     tasks = {}
 

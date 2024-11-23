@@ -8,9 +8,20 @@ https://docs.djangoproject.com/en/5.1/howto/deployment/asgi/
 """
 
 import os
-
 from django.core.asgi import get_asgi_application
+from channels.routing import ProtocolTypeRouter, URLRouter
+from channels.auth import AuthMiddlewareStack
+from django.urls import path
+from github_health.consumers import TaskStatusConsumer  # Make sure this path is correct
 
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')  # Correct reference to settings
 
-application = get_asgi_application()
+# ASGI application setup
+application = ProtocolTypeRouter({
+    "http": get_asgi_application(),  # Handles traditional HTTP requests
+    "websocket": AuthMiddlewareStack(
+        URLRouter([
+            path("ws/task-updates/", TaskStatusConsumer.as_asgi()),  # WebSocket route
+        ])
+    ),
+})
