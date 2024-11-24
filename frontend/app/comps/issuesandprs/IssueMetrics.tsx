@@ -1,4 +1,6 @@
+
 'use client'
+
 import { useRepository } from "@/hooks/useRepository"
 import { Bar } from "react-chartjs-2"
 import {
@@ -12,9 +14,10 @@ import {
 } from 'chart.js'
 import { Card } from "@/components/ui/card"
 import { formatDuration, calculatePercentage } from "@/lib/utils"
-import { AlertCircle, CheckCircle, Clock, TrendingUp, Users } from "lucide-react"
+import { AlertCircle, CheckCircle, Clock, TrendingUp, Users } from 'lucide-react'
 import { fetchHealthAndQuality, fetchRepositoryMetrics } from "@/services/api"
 import { useQuery } from "@tanstack/react-query"
+import { Skeleton } from "@/components/ui/skeleton"
 
 ChartJS.register(
   CategoryScale,
@@ -28,21 +31,19 @@ ChartJS.register(
 export function IssueMetrics() {
   const { repository } = useRepository()
 
-  const { data: metric = {}, isLoading, error } = useQuery({
+  const { data: metric = {}, isLoading: isMetricsLoading } = useQuery({
     queryKey: ['metrics', repository?.id],
     queryFn: () => fetchRepositoryMetrics(repository?.id),
     enabled: !!repository?.id,
   })
 
-  const { data: health_metrics = {} } = useQuery({
+  const { data: health_metrics = {}, isLoading: isHealthMetricsLoading } = useQuery({
     queryKey: ['health-metrics', repository?.id],
     queryFn: () => fetchHealthAndQuality(repository?.id),
     enabled: !!repository?.id,
   })
-  
-  if (health_metrics) {
-    console.log(health_metrics);
-  }
+
+  const isLoading = isMetricsLoading || isHealthMetricsLoading
 
   const issueAgeData = {
     labels: ['<1 day', '1-7 days', '1-4 weeks', '>1 month'],
@@ -81,26 +82,26 @@ export function IssueMetrics() {
   const metrics = [
     {
       title: "Open Issues",
-      value: repository.open_issues_count,
+      value: repository?.open_issues_count,
       icon: AlertCircle,
       color: "text-yellow-500"
     },
     {
       title: "Closed Issues",
-      value: repository.closed_issues_count,
+      value: repository?.closed_issues_count,
       icon: CheckCircle,
       color: "text-green-500"
     },
     {
       title: "Avg Resolution Time",
-      value: `${Math.round(parseFloat(repository.avg_issue_close_time?.split(' ')[0]))}h`,
+      value: `${Math.round(parseFloat(repository?.avg_issue_close_time?.split(' ')[0]))}h`,
       icon: Clock,
       color: "text-blue-500"
     },
     {
       title: "Resolution Rate",
-      value: `${calculatePercentage(repository.closed_issues_count, 
-        repository.closed_issues_count + repository.open_issues_count)}%`,
+      value: `${calculatePercentage(repository?.closed_issues_count, 
+        repository?.closed_issues_count + repository?.open_issues_count)}%`,
       icon: TrendingUp,
       color: "text-purple-500"
     },
@@ -119,34 +120,48 @@ export function IssueMetrics() {
     },
   ]
 
+  const SkeletonMetricCard = () => (
+    <Card className="p-4 bg-gray-300 animate-pulse">
+      <div className="flex items-center space-x-2 ">
+        <Skeleton className="h-4 w-4 rounded-full animate-pulse" />
+        <Skeleton className="h-4 w-24 animate-pulse " />
+      </div>
+      <Skeleton className="mt-3 h-8 w-16 animate-pulse" />
+    </Card>
+  )
+
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-2 gap-4">
-        {metrics.map((metric) => (
-          <Card key={metric.title} className="p-4">
-            <div className="flex items-center space-x-2">
-              <metric.icon className={`h-4 w-4 ${metric.color}`} />
-              <span className="text-sm font-medium">{metric.title}</span>
-            </div>
-            <div className="mt-3 text-2xl font-bold">{metric.value}</div>
-          </Card>
-        ))}
+        {isLoading
+          ? Array(6).fill(0).map((_, index) => <SkeletonMetricCard key={index} />)
+          : metrics.map((metric) => (
+              <Card key={metric.title} className="p-4">
+                <div className="flex items-center space-x-2">
+                  <metric.icon className={`h-4 w-4 ${metric.color}`} />
+                  <span className="text-sm font-medium">{metric.title}</span>
+                </div>
+                <div className="mt-3 text-2xl font-bold">{metric.value}</div>
+              </Card>
+            ))
+        }
       </div>
 
       <div>
-  <h3 className="text-sm font-medium mb-3">Issue Age Distribution</h3>
-  {!issueAgeData ? (
-    <div className="relative h-[400px] w-full bg-gray-100 rounded-lg">
-      {/* Skeleton bars */}
-      <div className="absolute bottom-0 left-[10%] w-[10%] h-[50%] bg-gray-300 rounded"></div>
-      <div className="absolute bottom-0 left-[30%] w-[10%] h-[70%] bg-gray-400 rounded"></div>
-      <div className="absolute bottom-0 left-[50%] w-[10%] h-[60%] bg-gray-300 rounded"></div>
-      <div className="absolute bottom-0 left-[70%] w-[10%] h-[80%] bg-gray-400 rounded"></div>
-    </div>
-  ) : (
-    <Bar data={issueAgeData} options={options} />
-  )}
-</div>
+        <h3 className="text-sm font-medium mb-3">Issue Age Distribution</h3>
+        {isLoading ? (
+          <div className="relative h-[400px] w-full bg-black rounded-lg overflow-hidden">
+            {/* Skeleton bars */}
+            <div className="absolute bottom-0 left-[10%] w-[10%] h-[50%] bg-gray-300 rounded animate-pulse"></div>
+            <div className="absolute bottom-0 left-[30%] w-[10%] h-[70%] bg-gray-300 rounded animate-pulse"></div>
+            <div className="absolute bottom-0 left-[50%] w-[10%] h-[60%] bg-gray-300 rounded animate-pulse"></div>
+            <div className="absolute bottom-0 left-[70%] w-[10%] h-[80%] bg-gray-300 rounded animate-pulse"></div>
+          </div>
+        ) : (
+          <Bar data={issueAgeData} options={options} />
+        )}
+      </div>
     </div>
   )
 }
+

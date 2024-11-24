@@ -1,5 +1,3 @@
-
-
 'use client'
 
 import { useQuery } from '@tanstack/react-query'
@@ -49,8 +47,33 @@ export default function AnalyticsPage() {
 
   const { community_health, timeline_data, contributors } = data || {}
 
+  const ActivityTimelineSkeleton = () => (
+    <div className="h-[400px] w-full bg-black rounded-lg overflow-hidden relative">
+      <div className="absolute inset-0 flex items-end justify-around p-4">
+        {[...Array(12)].map((_, i) => (
+          <div key={i} className="w-[7%] bg-gray-300 animate-pulse" style={{ height: `${Math.random() * 70 + 30}%` }} />
+        ))}
+      </div>
+      <div className="absolute left-0 bottom-0 h-[1px] w-full bg-gray-300" />
+      <div className="absolute left-0 top-0 h-full w-[1px] bg-gray-300" />
+    </div>
+  )
+
+  const TopContributorsSkeleton = () => (
+    <div className="h-[400px] w-full bg-black rounded-lg overflow-hidden relative">
+      <div className="absolute inset-0 flex flex-col justify-around p-4">
+        {[...Array(5)].map((_, i) => (
+          <div key={i} className="flex items-center ">
+            <Skeleton className="h-6 w-24 mr-4 animate-pulse bg-gray-300" />
+            <Skeleton className="h-6 flex-grow animate-pulse bg-blue-300" style={{ maxWidth: `${Math.random() * 50 + 50}%` }} />
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+
   return (
-    <div className="container mx-auto p-6 space-y-8">
+    <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
       <div className="flex items-center justify-between space-y-2">
         <h2 className="text-3xl font-bold tracking-tight">Repository Analytics Dashboard</h2>
         <div className="flex items-center space-x-2">
@@ -74,19 +97,23 @@ export default function AnalyticsPage() {
         )}
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {community_health &&
-              Object.entries(community_health).map(([key, value]) => (
-                <Card key={key} className={`bg-gradient-to-br ${value ? 'from-green-50 to-green-100 dark:from-green-900 dark:to-green-800' : 'from-red-50 to-red-100 dark:from-red-900 dark:to-red-800'}`}>
-                  <CardContent className="p-4 flex flex-col items-center justify-center text-center h-full">
-                    <p className="font-semibold mb-2 text-sm">{key.replace(/_/g, ' ')}</p>
-                    {value ? (
-                      <CheckCircle2 className="w-8 h-8 text-green-600 dark:text-green-400" />
-                    ) : (
-                      <XCircle className="w-8 h-8 text-red-600 dark:text-red-400" />
-                    )}
-                  </CardContent>
-                </Card>
-              ))}
+            {isLoading
+              ? [...Array(4)].map((_, i) => (
+                  <Skeleton key={i} className="h-24 w-full animate-pulse bg-gray-300" />
+                ))
+              : community_health &&
+                Object.entries(community_health).map(([key, value]) => (
+                  <Card key={key} className={`bg-gradient-to-br ${value ? 'from-green-50 to-green-100 dark:from-green-900 dark:to-green-800' : 'from-red-50 to-red-100 dark:from-red-900 dark:to-red-800'}`}>
+                    <CardContent className="p-4 flex flex-col items-center justify-center text-center h-full">
+                      <p className="font-semibold mb-2 text-sm">{key.replace(/_/g, ' ')}</p>
+                      {value ? (
+                        <CheckCircle2 className="w-8 h-8 text-green-600 dark:text-green-400" />
+                      ) : (
+                        <XCircle className="w-8 h-8 text-red-600 dark:text-red-400" />
+                      )}
+                    </CardContent>
+                  </Card>
+                ))}
           </div>
         </CardContent>
       </Card>
@@ -99,7 +126,9 @@ export default function AnalyticsPage() {
             <CardTitle>Activity Timeline</CardTitle>
           </CardHeader>
           <CardContent className="h-[400px]">
-            {timeline_data?.dates?.length > 0 ? (
+            {isLoading ? (
+              <ActivityTimelineSkeleton />
+            ) : timeline_data?.dates?.length > 0 ? (
               <ChartContainer
                 config={{
                   issues_opened: { label: 'Issues Opened', color: 'hsl(var(--chart-1))' },
@@ -167,7 +196,9 @@ export default function AnalyticsPage() {
             <CardTitle>Top Contributors</CardTitle>
           </CardHeader>
           <CardContent className="h-[400px]">
-            {contributors?.length > 0 ? (
+            {isLoading ? (
+              <TopContributorsSkeleton />
+            ) : contributors?.length > 0 ? (
               <ChartContainer
                 config={{
                   contributions: { label: 'Contributions', color: 'hsl(var(--chart-1))' },

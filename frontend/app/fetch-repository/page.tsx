@@ -15,7 +15,7 @@ const FetchRepoPage: React.FC = () => {
   };
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
       <Card className="max-w-2xl mx-auto">
         <CardHeader>
           <CardTitle className="text-3xl font-bold text-center">GitHub Repository Data Fetcher</CardTitle>
@@ -27,7 +27,6 @@ const FetchRepoPage: React.FC = () => {
           ) : (
             <>
             <TaskStatus taskId={taskId} repoName={repoName!} />
-            {/* <WebSocketUpdates taskId={taskId} /> */}
             </>
           )}
         </CardContent>

@@ -17,17 +17,27 @@ export default function GitHubHealthMeter({
 }: GitHubHealthMeterProps) {
   if (isLoading) {
     return (
-      
-          <div className="flex flex-col items-center space-y-6">
-            {/* Circular Skeleton */}
-            <Skeleton className="w-64 h-64 rounded-full" />
-            {/* Skeleton for Metrics */}
-            <div className="grid grid-cols-2 gap-8 w-full max-w-xs">
-              <Skeleton className="h-12 w-full" />
-              <Skeleton className="h-12 w-full" />
-            </div>
+      <div className="flex flex-col items-center space-y-6">
+        {/* Circular Skeleton */}
+        <div className="relative w-64 h-64 ">
+          <Skeleton className="absolute inset-0 w-full h-full rounded-full bg-gray-300" />
+          <div className="absolute inset-0 flex flex-col items-center justify-center">
+            <Skeleton className="h-10 w-20 mb-2 bg-gray-300" />
+            <Skeleton className="h-5 w-24 bg-gray-300" />
           </div>
-      
+        </div>
+        {/* Skeleton for Metrics */}
+        <div className="grid grid-cols-2 gap-8 w-full max-w-xs ">
+          <div className="text-center rounded-md bg-gray-300 animate-pulse">
+            <Skeleton className="h-4 w-16 mx-auto mb-1 " />
+            <Skeleton className="h-8 w-20 mx-auto " />
+          </div>
+          <div className="text-center rounded-md bg-gray-300 animate-pulse">
+            <Skeleton className="h-4 w-16 mx-auto mb-1 " />
+            <Skeleton className="h-8 w-20 mx-auto " />
+          </div>
+        </div>
+      </div>
     )
   }
 

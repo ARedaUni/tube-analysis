@@ -1,11 +1,14 @@
-# Dockerfile for Next.js frontend
-FROM node:18-alpine
-
+# Build stage
+FROM node:18-alpine AS builder
 WORKDIR /app
-
-# Copy frontend code and install dependencies
-COPY ./frontend /app
+COPY package*.json ./
 RUN npm install
+COPY ./frontend /app
+RUN npm run build
 
-# Start the development server
-CMD ["npm", "run", "dev"]
+# Serve stage
+FROM node:18-alpine
+WORKDIR /app
+COPY --from=builder /app ./
+EXPOSE 3000
+CMD ["npm", "start"]
