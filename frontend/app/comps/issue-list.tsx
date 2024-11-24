@@ -13,7 +13,7 @@ export function IssueList({id}: {id: number}) {
     <div className="space-y-8">
       {recentIssues.map((issue, index) => (
         <div key={index} className="flex items-center">
-          <div className="space-y-1">
+          <div key={id} className="space-y-1">
             <p className="text-sm font-medium leading-none">{issue.title}</p>
             <p className="text-sm text-muted-foreground">Assigned to {issue.assignee}</p>
           </div>

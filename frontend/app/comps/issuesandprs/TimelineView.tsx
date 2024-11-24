@@ -234,9 +234,8 @@ function TimelineChart() {
     if (!healthMetrics || !healthMetrics.timeline_data) return null;
 
     const { timeline_data } = healthMetrics;
-
     return {
-      labels: timeline_data.dates.map(date => new Date(date).toLocaleDateString()),
+      labels: timeline_data.dates.map((date: string) => new Date(date).toLocaleDateString()),
       datasets: [
         {
           label: 'Issues Opened',

@@ -27,22 +27,22 @@ ChartJS.register(
 )
 
 
-interface RepositoryData {
-  name: string
-  stars: number
-  forks: number
-  open_issues: number
-  closed_issues_count: number
-  avg_issue_close_time: string
-  avg_pr_merge_time: string
-  created_at: string
-  updated_at: string
-  starHistory?: { date: string; stars: number }[]
-}
+// interface RepositoryData {
+//   name: string
+//   stars: number
+//   forks: number
+//   open_issues: number
+//   closed_issues_count: number
+//   avg_issue_close_time: string
+//   avg_pr_merge_time: string
+//   created_at: string
+//   updated_at: string
+//   starHistory?: { date: string; stars: number }[]
+// }
 
 export default function RepositoryOverview() {
   const { repository, isLoading, error } = useRepository()
-  repository && console.log(repository)
+
   if (isLoading) {
     return <LoadingSpinner />
   }
@@ -64,13 +64,12 @@ export default function RepositoryOverview() {
   }
 
   const starHistory = repository.starHistory || []
-
   const chartData = {
-    labels: starHistory.map(item => item.date),
+    labels: starHistory.map((item: { date: string; stars: number }) => item.date),
     datasets: [
       {
         label: 'Stars',
-        data: starHistory.map(item => item.stars),
+        data: starHistory.map((item: { date: string; stars: number }) => item.stars),
         borderColor: 'rgb(75, 192, 192)',
         backgroundColor: 'rgba(75, 192, 192, 0.5)',
         tension: 0.1,

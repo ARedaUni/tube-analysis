@@ -7,9 +7,8 @@ import RepositorySelector from '@/app/comps/RepositorySelector'
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Star, GitFork, AlertCircle, GitPullRequest, Code, Users, Clock, Calendar } from 'lucide-react'
-
 // Helper function to convert duration to human-readable format
-const formatDuration = (duration) => {
+const formatDuration = (duration: string): string => {
   if (!duration) return 'N/A'
   const parts = duration.split(':')
   if (parts.length >= 3) {
@@ -21,7 +20,14 @@ const formatDuration = (duration) => {
   return 'N/A'
 }
 
-const StatCard = ({ title, value, icon: Icon, color }) => {
+type StatCardProps = {
+  title: string;
+  value: string | number;
+  icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
+  color: string;
+}
+
+const StatCard: React.FC<StatCardProps> = ({ title, value, icon: Icon, color }) => {
   const [isHovered, setIsHovered] = useState(false)
 
   return (
@@ -43,7 +49,11 @@ const StatCard = ({ title, value, icon: Icon, color }) => {
   )
 }
 
-const LanguageBar = ({ languages }) => {
+type LanguageBarProps = {
+  languages: Record<string, number>;
+}
+
+const LanguageBar: React.FC<LanguageBarProps> = ({ languages }) => {
   const sortedLanguages = useMemo(() => {
     const totalLines = Object.values(languages).reduce((sum, lines) => sum + lines, 0)
     return Object.entries(languages)
@@ -85,7 +95,7 @@ const LanguageBar = ({ languages }) => {
   )
 }
 
-const getLanguageColor = (language) => {
+const getLanguageColor = (language: string): string => {
   const colors = {
     JavaScript: '#f1e05a',
     TypeScript: '#2b7489',
@@ -95,18 +105,25 @@ const getLanguageColor = (language) => {
     Python: '#3572A5',
     HTML: '#e34c26',
     CSS: '#563d7c',
-    // Add more languages and their colors as needed
+    Go: '#00ADD8',
+    Ruby: '#701516',
+    PHP: '#4F5D95',
+    Swift: '#F05138',
+    Kotlin: '#F18E33',
+    Dart: '#00B4AB',
+    Scala: '#DC322F',
+    Elixir: '#6E4C3A',
   }
-  return colors[language] || '#bbbbbb'
+  return colors[language as keyof typeof colors] || '#bbbbbb'
 }
 
-const capitalizeFirstLetter = (string) => {
+const capitalizeFirstLetter = (string: string): string => {
   return string.charAt(0).toUpperCase() + string.slice(1)
 }
 
 export default function OverviewPage() {
   const { repository, isLoading, error } = useRepository()
-  const [isVisible, setIsVisible] = useState(false)
+  const [isVisible, setIsVisible] = useState<boolean>(false)
 
   if (isLoading) {
     return <LoadingSkeleton />
@@ -138,7 +155,21 @@ export default function OverviewPage() {
     updated_at,
     avg_issue_close_time,
     avg_pr_merge_time,
-  } = repository
+  } = repository as {
+    name: string;
+    owner: string;
+    description: string;
+    stars: number;
+    forks: number;
+    open_issues: number;
+    contributors: Array<{ name: string }>;
+    languages: Record<string, number>;
+    commit_count: number;
+    created_at: string;
+    updated_at: string;
+    avg_issue_close_time: string;
+    avg_pr_merge_time: string;
+  }
 
   setTimeout(() => setIsVisible(true), 100)
 

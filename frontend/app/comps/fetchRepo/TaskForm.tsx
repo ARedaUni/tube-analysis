@@ -34,8 +34,12 @@ export const TaskForm: React.FC<TaskFormProps> = ({ onTaskStart }) => {
       } else {
         throw new Error(response.data.error || "Failed to start task");
       }
-    } catch (err: any) {
-      setError(err.message || "Something went wrong");
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setError(err.message || "Something went wrong");
+      } else {
+        setError("Something went wrong");
+      }
     } finally {
       setIsLoading(false);
     }

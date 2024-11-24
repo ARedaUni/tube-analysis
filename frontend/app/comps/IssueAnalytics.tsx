@@ -5,7 +5,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Clock, AlertCircle, CheckCircle } from 'lucide-react'
 import { useRepository } from '@/hooks/useRepository'
 
-const CustomBarChart = ({ data }) => {
+interface CustomBarChartData {
+  name: string;
+  value: number;
+  color: string;
+}
+
+const CustomBarChart = ({ data }: { data: CustomBarChartData[] }) => {
   const maxValue = Math.max(...data.map(item => item.value))
 
   return (
@@ -35,6 +41,7 @@ export default function IssueAnalytics() {
     { name: 'Open Issues', value: repository.open_issues_count, color: 'hsl(var(--chart-1))' },
     { name: 'Closed Issues', value: repository.closed_issues_count, color: 'hsl(var(--chart-2))' },
   ]
+  const avgCloseTime = repository.avg_issue_close_time ? Math.round(parseFloat(repository.avg_issue_close_time.split(' ')[0])) : 0;
   return (
     <div className="space-y-6 p-4 sm:p-6 lg:p-8">
       <Card className="overflow-hidden">
@@ -45,7 +52,6 @@ export default function IssueAnalytics() {
           <CustomBarChart data={issueStatusData} />
         </CardContent>
       </Card>
-
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
         <StatCard
           title="Open Issues"
@@ -65,7 +71,7 @@ export default function IssueAnalytics() {
         />
         <StatCard
           title="Avg. Issue Close Time"
-          value={Math.round(parseFloat(repository.avg_issue_close_time?.split(' ')[0]))}
+          value={avgCloseTime}
           icon={Clock}
           gradientFrom="from-blue-500/10"
           gradientTo="to-cyan-500/10"
@@ -77,7 +83,15 @@ export default function IssueAnalytics() {
   )
 }
 
-function StatCard({ title, value, icon: Icon, gradientFrom, gradientTo, textColor, unit }) {
+function StatCard({ title, value, icon: Icon, gradientFrom, gradientTo, textColor, unit }: {
+  title: string;
+  value: number;
+  icon: React.ElementType;
+  gradientFrom: string;
+  gradientTo: string;
+  textColor: string;
+  unit?: string;
+}) {
   return (
     <div className={`flex flex-col items-center justify-center p-4 sm:p-6 lg:p-8 bg-gradient-to-br ${gradientFrom} ${gradientTo} rounded-lg sm:rounded-xl hover:shadow-lg transition-all duration-200 hover:scale-[1.02] group`}>
       <Icon className={`w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 mb-2 sm:mb-3 ${textColor}`} strokeWidth={1.5} />

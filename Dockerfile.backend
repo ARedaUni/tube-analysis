@@ -22,6 +22,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Copy the rest of the application code
 COPY . /app/
 
-# Run the Django development server by default
-CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
+# Create a non-root user
+RUN useradd -m myuser
+RUN chown -R myuser:myuser /app
+USER myuser
+
+# The command will be provided by docker-compose
+CMD ["gunicorn", "--config", "gunicorn.conf.py", "config.wsgi:application"]
 

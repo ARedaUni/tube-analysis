@@ -20,8 +20,8 @@ interface Subtask {
   id: string;
   name: string;
   status: string;
-  result: any;
-  info: any;
+  result: unknown;
+  info: unknown;
 }
 
 export const TaskStatus: React.FC<TaskStatusProps> = ({ taskId, repoName }) => {
@@ -37,7 +37,7 @@ export const TaskStatus: React.FC<TaskStatusProps> = ({ taskId, repoName }) => {
         const response = await axios.get(
           `http://localhost:8000/api/task-status/${taskId}/`
         );
-        const { status, meta, subtasks } = response.data;
+        const { status, subtasks } = response.data;
 
         // Process subtasks
         if (subtasks && Array.isArray(subtasks)) {

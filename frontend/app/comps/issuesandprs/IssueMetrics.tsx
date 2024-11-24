@@ -40,8 +40,9 @@ export function IssueMetrics() {
     enabled: !!repository?.id,
   })
   
-
-  health_metrics && console.log(health_metrics)
+  if (health_metrics) {
+    console.log(health_metrics);
+  }
 
   const issueAgeData = {
     labels: ['<1 day', '1-7 days', '1-4 weeks', '>1 month'],

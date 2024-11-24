@@ -34,7 +34,7 @@ export default function ContributorsPage() {
             <CardTitle>Contributor Insights</CardTitle>
           </CardHeader>
           <CardContent>
-            <ContributorInsights repositoryId={repository.id}/>
+            <ContributorInsights />
           </CardContent>
         </Card>
         <Card className="col-span-3">

@@ -5,8 +5,6 @@ import LoadingSpinner from "../comps/LoadingSpinner"
 import { IssueMetrics } from "../comps/issuesandprs/IssueMetrics"
 import { PRMetrics } from "../comps/issuesandprs/PRMetrics"
 import { TimelineView } from "../comps/issuesandprs/TimelineView"
-import { LabelAnalysis } from "../comps/issuesandprs/LabelAnalysis"
-import { ReviewAnalytics } from "../comps/issuesandprs/ReviewAnalytics"
 import RepositorySelector from "../comps/RepositorySelector"
 
 export default function IssuesPRsPage() {

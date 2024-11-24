@@ -4,7 +4,6 @@ import { TaskForm } from "../comps/fetchRepo/TaskForm";
 import { TaskStatus } from "../comps/fetchRepo/TaskStatus";
 import { FancyAnimations } from "../comps/fetchRepo/FancyAnimations";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { WebSocketUpdates } from "../comps/fetchRepo/WebsocketUpdates";
 
 const FetchRepoPage: React.FC = () => {
   const [taskId, setTaskId] = useState<string | null>(null);

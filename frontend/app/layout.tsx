@@ -21,7 +21,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           defaultTheme="system"
           enableSystem
           disableTransitionOnChange
-          forcedTheme="system" // Ensures consistency
+          // storageKey="ui-theme"
+          forcedTheme='system'
         >
           <div className="flex h-screen overflow-hidden">
             <Sidebar />

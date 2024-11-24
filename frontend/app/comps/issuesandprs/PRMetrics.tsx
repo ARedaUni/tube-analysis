@@ -14,7 +14,7 @@ import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip, Legend } from "recha
 export function PRMetrics() {
   const { repository } = useRepository()
 
-  const { data: metric = {}, isLoading, error } = useQuery({
+  const { data: metric = {} } = useQuery({
     queryKey: ['metrics', repository?.id],
     queryFn: () => fetchRepositoryMetrics(repository?.id),
     enabled: !!repository?.id,
