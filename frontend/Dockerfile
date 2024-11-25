@@ -3,7 +3,7 @@ FROM node:18-alpine AS builder
 WORKDIR /app
 COPY package*.json ./
 RUN npm install
-COPY ./frontend /app
+COPY . /app
 RUN npm run build
 
 # Serve stage

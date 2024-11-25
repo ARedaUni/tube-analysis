@@ -19,6 +19,7 @@ import {
 import { Input } from '@/components/ui/input'
 import { useToast } from "@/hooks/use-toast"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
+import { baseUrl } from '@/lib/baseUrl'
 
 const registerSchema = z.object({
   username: z.string().min(1, 'Username is required'),
@@ -33,7 +34,7 @@ const registerSchema = z.object({
 })
 
 async function registerUser(userData: z.infer<typeof registerSchema>) {
-  const response = await fetch('http://localhost:8000/auth/register/', {
+  const response = await fetch(`${baseUrl}/auth/register/`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(userData),

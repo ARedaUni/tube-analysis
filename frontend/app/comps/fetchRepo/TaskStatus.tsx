@@ -4,6 +4,7 @@ import axios from "axios";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Progress } from "@/components/ui/progress";
 import { CheckCircle2, XCircle, Loader2 } from "lucide-react";
+import { baseUrl } from "@/lib/baseUrl";
 
 interface TaskStatusProps {
   taskId: string;
@@ -35,7 +36,7 @@ export const TaskStatus: React.FC<TaskStatusProps> = ({ taskId, repoName }) => {
     const fetchTaskStatus = async () => {
       try {
         const response = await axios.get(
-          `http://localhost:8000/api/task-status/${taskId}/`
+          `${baseUrl}/api/task-status/${taskId}/`
         );
         const { status, subtasks } = response.data;
 

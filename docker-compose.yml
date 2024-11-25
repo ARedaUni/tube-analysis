@@ -1,31 +1,14 @@
-version: '3'
-
 services:
-  db:
-    image: postgres:13
-    container_name: postgres
-    restart: always
-    volumes:
-      - postgres_data:/var/lib/postgresql/data/
-    networks:
-      - backend_network
-
-  redis:
-    image: redis:6
-    container_name: redis
-    restart: always
-    networks:
-      - backend_network
-
   backend:
     build:
       context: ./backend
+      dockerfile: Dockerfile
     container_name: backend
     volumes:
       - ./backend:/app
     ports:
       - "8000:8000"
-    env_file: .env
+    env_file: ./backend/.env
     depends_on:
       - db
       - redis
@@ -36,10 +19,11 @@ services:
   celery_worker:
     build:
       context: ./backend
+      dockerfile: Dockerfile
     container_name: celery_worker
     volumes:
       - ./backend:/app
-    env_file: .env
+    env_file: ./backend/.env
     depends_on:
       - backend
       - redis
@@ -47,19 +31,21 @@ services:
     networks:
       - backend_network
 
-  celery_beat:
+  frontend:
     build:
-      context: ./backend
-    container_name: celery_beat
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: frontend
     volumes:
-      - ./backend:/app
-    env_file: .env
+      - ./frontend:/app
+    ports:
+      - "3000:3000"
+    env_file: ./frontend/.env.local
     depends_on:
       - backend
-      - redis
-    command: celery -A config beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler
     networks:
       - backend_network
+    command: npm start
 
 volumes:
   postgres_data:

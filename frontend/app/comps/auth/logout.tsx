@@ -5,10 +5,11 @@ import { useMutation } from '@tanstack/react-query'
 import { useToast } from "@/hooks/use-toast"
 import { Button } from '@/components/ui/button'
 import { Loader2 } from 'lucide-react'
+import { baseUrl } from '@/lib/baseUrl'
 
 async function logoutUser() {
   const refreshToken = localStorage.getItem('refreshToken')
-  const response = await fetch('http://localhost:8000/auth/logout/', {
+  const response = await fetch(`${baseUrl}/auth/logout/`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

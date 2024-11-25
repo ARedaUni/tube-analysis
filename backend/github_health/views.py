@@ -34,7 +34,6 @@ class FetchRepositoryView(APIView):
         repo_name = request.data.get("repo_name")
         if not repo_name:
             return Response({"error": "Repository name is required."}, status=status.HTTP_400_BAD_REQUEST)
-
         try:
             # Trigger Celery task
             task = fetch_repository_data.delay(repo_name)

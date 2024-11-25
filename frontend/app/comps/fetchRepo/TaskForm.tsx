@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertCircle, Loader2 } from 'lucide-react';
+import { baseUrl } from "@/lib/baseUrl";
 
 interface TaskFormProps {
   onTaskStart: (taskId: string, repoName: string) => void;
@@ -27,7 +28,7 @@ export const TaskForm: React.FC<TaskFormProps> = ({ onTaskStart }) => {
       const [, owner, name] = match;
       const repoName = `${owner}/${name}`;
 
-      const response = await axios.post("http://localhost:8000/api/fetch-repository/", { repo_name: repoName });
+      const response = await axios.post(`${baseUrl}/api/fetch-repository/`, { repo_name: repoName });
 
       if (response.status === 202) {
         onTaskStart(response.data.task_id, repoName);
