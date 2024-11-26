@@ -1,11 +1,25 @@
 services:
-  backend:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
-    container_name: backend
+  db:
+    image: postgres:13
+    container_name: postgres
+    restart: always
     volumes:
-      - ./backend:/app
+      - postgres_data:/var/lib/postgresql/data/
+    env_file:
+      - ./backend/.env
+    networks:
+      - backend_network
+      
+  redis:
+    image: redis:6
+    container_name: redis
+    restart: always
+    networks:
+      - backend_network
+
+  backend:
+    image: alireda139/backend:latest  # Use the pushed backend image
+    container_name: backend
     ports:
       - "8000:8000"
     env_file: ./backend/.env
@@ -17,27 +31,19 @@ services:
     command: gunicorn --config gunicorn.conf.py config.wsgi:application
 
   celery_worker:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
+    image: alireda139/celery_worker:latest  # Use the pushed celery worker image
     container_name: celery_worker
-    volumes:
-      - ./backend:/app
     env_file: ./backend/.env
     depends_on:
       - backend
       - redis
-    command: celery -A config worker --loglevel=info
     networks:
       - backend_network
+    command: celery -A config worker --loglevel=info
 
   frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
+    image: alireda139/frontend:latest  # Use the pushed frontend image
     container_name: frontend
-    volumes:
-      - ./frontend:/app
     ports:
       - "3000:3000"
     env_file: ./frontend/.env.local
