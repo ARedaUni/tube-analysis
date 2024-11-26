@@ -20,7 +20,7 @@ SECRET_KEY = 'django-insecure-qmiptpr@a&6gnj6$jdza2*b9(q6ab4w$312s_1po1kass6(ai9
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'http://githealth.us-east-1.elasticbeanstalk.com/']
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'https://backend-f0x3.onrender.com', 'backend-f0x3.onrender.com']
 
 # config/settings.py
 

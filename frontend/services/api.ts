@@ -2,7 +2,7 @@ import { baseUrl } from '@/lib/baseUrl'
 import axios from 'axios'
 
 const API = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || `${baseUrl}/api`, // Use environment variable
+  baseURL: `${baseUrl}/api`, // Use environment variable
 })
 
 // Centralized GET request function with error handling
